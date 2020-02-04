@@ -1,0 +1,1 @@
+ExactlyOnce.AzureFunctions
