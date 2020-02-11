@@ -1,35 +1,35 @@
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
+
+[assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Tests")]
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
     ///TODO: use https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection
     ///      for configuration etc.
-    
-    public static class EntryFunction
+    class EntryFunction
     {
-        [FunctionName("EntryFunction")]
-        public static async Task Run(
-            [QueueTrigger("%ExactlyOnceInputQueue%", Connection = "")]CloudQueueMessage c, ILogger log)
+        MessageProcessor messageProcessor;
+
+        public EntryFunction(MessageProcessor messageProcessor)
         {
-            log.LogInformation($"C# Queue trigger function processed: {c}");
+            this.messageProcessor = messageProcessor;
+        }
 
-            var (headers, message) = Serializer.Deserialize(c.AsBytes);
+        [FunctionName("EntryFunction")]
+        public async Task Run(
+            [QueueTrigger("%ExactlyOnceInputQueue%")]CloudQueueMessage queueItem, 
+            ILogger log)
+        {
+            log.LogInformation($"C# Queue trigger function processed: {queueItem}");
 
-            //TODO: add stream store and create StateStore instance
-            var invoker = new HandlerInvoker(null);
-            var outputMessages = await invoker.Process(message as Message);
-
-            var runId = Guid.Parse(headers["Message.RunId"]);
-
-            //messageProcessed(runId, message, outputMessages);
-
-            //TODO: enable sending out messages
-            //await d.Send(outputMessages, runId);
+            await messageProcessor.Process(queueItem);
         }
     }
 }

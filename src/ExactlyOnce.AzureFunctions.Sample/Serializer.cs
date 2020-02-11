@@ -9,7 +9,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
         public const string MessageTypeName = "MessageType";
 
-        internal static byte[] Serialize<T>(T message, Dictionary<string, string> headers)
+        public static byte[] Serialize<T>(T message, Dictionary<string, string> headers)
         {
             headers.Add(MessageTypeName, message.GetType().FullName);
 
@@ -24,7 +24,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
             return Encoding.UTF8.GetBytes(text);
         }
 
-        internal static (Dictionary<string, string>, object) Deserialize(byte[] body)
+        public static (Dictionary<string, string>, object) Deserialize(byte[] body)
         {
             var text = Encoding.UTF8.GetString(body);
             var envelope = JsonSerializer.Deserialize<Envelope>(text);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ExactlyOnce.AzureFunctions.Sample.Domain;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {

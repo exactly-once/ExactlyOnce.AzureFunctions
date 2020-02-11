@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos.Table;
 using Newtonsoft.Json;
+using Streamstone;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
