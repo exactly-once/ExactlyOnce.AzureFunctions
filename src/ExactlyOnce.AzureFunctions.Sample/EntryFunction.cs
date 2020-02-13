@@ -8,11 +8,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
 
 [assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Tests")]
+[assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Console")]
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
-    ///TODO: use https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection
-    ///      for configuration etc.
     class EntryFunction
     {
         MessageProcessor messageProcessor;

@@ -2,16 +2,19 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ExactlyOnce.AzureFunctions.Sample.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
     class HandlerInvoker
     {
         private readonly StateStore stateStore;
+        private readonly ILogger<HandlerInvoker> logger;
 
-        public HandlerInvoker(StateStore stateStore)
+        public HandlerInvoker(StateStore stateStore, ILogger<HandlerInvoker> logger)
         {
             this.stateStore = stateStore;
+            this.logger = logger;
         }
 
         public async Task<Message[]> Process(Message message)
@@ -52,6 +55,8 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
             var (state, stream, duplicate) = await stateStore.LoadState<THandlerState>(stateId, messageId);
 
+            logger.LogInformation($"Invoking {typeof(THandler).Name}. Message:[type={inputMessage.GetType().Name}:id={messageId.ToString("N").Substring(0,4)}:dup={duplicate}]");
+            
             var outputMessages = InvokeHandler<THandler, THandlerState>(inputMessage, state);
 
             if (duplicate == false)

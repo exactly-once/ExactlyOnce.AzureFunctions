@@ -12,6 +12,8 @@ namespace ExactlyOnce.AzureFunctions.Sample
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            builder.Services.AddLogging();
+
             builder.Services.AddScoped(p => CreateStateStore());
             builder.Services.AddScoped<HandlerInvoker>();
             builder.Services.AddScoped(p => CreateMessageSender());
@@ -25,7 +27,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
                 .CreateCloudTableClient()
                 .GetTableReference("EndpointStore");
 
-            table.DeleteIfExists();
             table.CreateIfNotExists();
 
             var store = new StateStore(table);

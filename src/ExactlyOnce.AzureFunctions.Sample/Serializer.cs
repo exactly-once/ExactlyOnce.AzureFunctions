@@ -9,14 +9,14 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
         public const string MessageTypeName = "MessageType";
 
-        public static byte[] Serialize<T>(T message, Dictionary<string, string> headers)
+        public static byte[] Serialize(object message, Dictionary<string, string> headers)
         {
             headers.Add(MessageTypeName, message.GetType().FullName);
 
             var envelope = new Envelope
             {
                 Headers = headers,
-                Content = JsonSerializer.Serialize(message)
+                Content = JsonSerializer.Serialize(message, message.GetType())
             };
 
             var text = JsonSerializer.Serialize(envelope);
