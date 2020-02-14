@@ -1,10 +1,10 @@
-﻿namespace ExactlyOnce.AzureFunctions.Sample.Domain
+﻿using System;
+
+namespace ExactlyOnce.AzureFunctions.Sample.Domain
 {
-    class ShootingRange
+    class ShootingRange : Manages<ShootingRange.ShootingRangeData>, IHandler<FireAt>, IHandler<StartNewRound>
     {
         public const int MaxAttemptsInARound = 2;
-
-        public ShootingRangeData Data { get; set; }
 
         public void Handle(IHandlerContext context, FireAt command)
         {
@@ -42,10 +42,24 @@
             Data.TargetPosition = command.Position;
         }
 
+        public Guid Map(FireAt m) => m.GameId;
+        public Guid Map(StartNewRound m) => m.GameId;
+
         public class ShootingRangeData
         {
             public int TargetPosition { get; set; }
             public int NumberOfAttempts { get; set; }
         }
+    }
+
+    class Manages<T>
+    {
+        public T Data { get; set; }
+    }
+
+    interface IHandler<T>
+    {
+        Guid Map(T m);
+        void Handle(IHandlerContext context, T message);
     }
 }

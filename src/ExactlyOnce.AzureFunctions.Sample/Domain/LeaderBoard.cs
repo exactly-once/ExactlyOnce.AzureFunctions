@@ -1,8 +1,11 @@
-﻿namespace ExactlyOnce.AzureFunctions.Sample.Domain
+﻿using System;
+
+namespace ExactlyOnce.AzureFunctions.Sample.Domain
 {
-    class LeaderBoard
+    class LeaderBoard : Manages<LeaderBoard.LeaderBoardData>, IHandler<Hit>, IHandler<Missed>
     {
-        public LeaderBoardData Data { get; set; }
+        public Guid Map(Hit m) => m.GameId;
+        public Guid Map(Missed m) => m.GameId;
 
         public void Handle(IHandlerContext context, Hit @event)
         {

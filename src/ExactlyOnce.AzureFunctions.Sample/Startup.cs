@@ -1,4 +1,5 @@
 ﻿using ExactlyOnce.AzureFunctions.Sample;
+using ExactlyOnce.AzureFunctions.Sample.Domain;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Azure.Storage.Queue;
@@ -18,6 +19,18 @@ namespace ExactlyOnce.AzureFunctions.Sample
             builder.Services.AddScoped<HandlerInvoker>();
             builder.Services.AddScoped(p => CreateMessageSender());
             builder.Services.AddScoped<MessageProcessor>();
+
+            builder.Services.AddScoped(p =>
+            {
+                var handlerMap = new HandlersMap();
+                handlerMap.Initialize(new[]
+                {
+                    typeof(ShootingRange),
+                    typeof(LeaderBoard)
+                });
+
+                return handlerMap;
+            });
         }
 
         internal static StateStore CreateStateStore()

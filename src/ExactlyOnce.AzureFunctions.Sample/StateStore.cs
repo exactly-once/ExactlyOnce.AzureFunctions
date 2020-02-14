@@ -15,12 +15,12 @@ namespace ExactlyOnce.AzureFunctions.Sample
             this.table = table;
         }
 
-        public async Task<(THandlerState, Stream, bool)> LoadState<THandlerState>(Guid stateId, Guid messageId) where THandlerState : new()
+        public async Task<(object, Stream, bool)> LoadState(Type stateType, Guid stateId, Guid messageId)
         {
-            var streamId = $"{typeof(THandlerState).Name}-{stateId}";
+            var streamId = $"{stateType.Name}-{stateId}";
             var partition = new Partition(table, streamId);
 
-            var state = new THandlerState();
+            var state = Activator.CreateInstance(stateType);
 
             var existent = await Stream.TryOpenAsync(partition);
 
@@ -36,7 +36,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
             var stream = await ReadStream(partition, properties =>
             {
                 var mId = properties["MessageId"].GuidValue;
-                var nextState = DeserializeEvent<THandlerState>(properties);
+                var nextState = DeserializeEvent(stateType, properties);
 
                 if (mId == messageId)
                 {
@@ -53,10 +53,10 @@ namespace ExactlyOnce.AzureFunctions.Sample
             return (state, stream, isDuplicate);
         }
 
-        THandlerState DeserializeEvent<THandlerState>(EventProperties properties)
+        object DeserializeEvent(Type stateType, EventProperties properties)
         {
             var data = properties["Data"].StringValue;
-            var state = JsonConvert.DeserializeObject<THandlerState>(data);
+            var state = JsonConvert.DeserializeObject(data, stateType);
 
             return state;
         }
