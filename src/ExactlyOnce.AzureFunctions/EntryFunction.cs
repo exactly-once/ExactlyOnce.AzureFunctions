@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
@@ -10,7 +7,7 @@ using Microsoft.WindowsAzure.Storage.Queue;
 [assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Tests")]
 [assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Console")]
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
     class EntryFunction
     {

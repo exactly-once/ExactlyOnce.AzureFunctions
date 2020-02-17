@@ -4,9 +4,9 @@ using Microsoft.Azure.Cosmos.Table;
 using Newtonsoft.Json;
 using Streamstone;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
-    class StateStore
+    public class StateStore
     {
         readonly CloudTable table;
 

@@ -12,10 +12,10 @@ namespace ExactlyOnce.AzureFunctions.Tests
         [Test]
         public async Task SendAMessage()
         {
-            var sender = Startup.CreateMessageSender();
+            var sender = ExactlyOnceServiceCollectionExtensions.CreateMessageSender();
 
-            await sender.Publish(new []{new StartNewRound{GameId = Guid.Empty, Position = 10}});
-            await sender.Publish(new []{new FireAt{GameId = Guid.Empty, Position = 10}});
+            await sender.Publish(new []{new StartNewRound{Id=Guid.NewGuid(), GameId = Guid.Empty, Position = 10}});
+            await sender.Publish(new []{new FireAt{Id = Guid.NewGuid(), GameId = Guid.Empty, Position = 10}});
 
             Assert.Pass();
         }

@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
     class HandlerContext : IHandlerContext
     {
@@ -39,7 +38,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
         }
     }
 
-    internal interface IHandlerContext
+    public interface IHandlerContext
     {
         void Publish(Message message);
 

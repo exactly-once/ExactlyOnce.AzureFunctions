@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
     public static class Serializer {
 
@@ -11,7 +11,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
         public static byte[] Serialize(object message, Dictionary<string, string> headers)
         {
-            headers.Add(MessageTypeName, message.GetType().FullName);
+            headers.Add(MessageTypeName, message.GetType().AssemblyQualifiedName);
 
             var envelope = new Envelope
             {

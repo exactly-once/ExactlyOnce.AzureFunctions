@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExactlyOnce.AzureFunctions.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExactlyOnce.AzureFunctions.Tests", "ExactlyOnce.AzureFunctions.Tests\ExactlyOnce.AzureFunctions.Tests.csproj", "{48629BEC-B789-47B0-ADDD-56D14F633BEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExactlyOnce.AzureFunctions.Console", "ExactlyOnce.AzureFunctions.Console\ExactlyOnce.AzureFunctions.Console.csproj", "{03CA137B-ABFD-4B1B-AD24-9A9B7111161C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExactlyOnce.AzureFunctions.Console", "ExactlyOnce.AzureFunctions.Console\ExactlyOnce.AzureFunctions.Console.csproj", "{03CA137B-ABFD-4B1B-AD24-9A9B7111161C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExactlyOnce.AzureFunctions", "ExactlyOnce.AzureFunctions\ExactlyOnce.AzureFunctions.csproj", "{2279A9E7-540D-4BF3-A1F6-87B6C1D51443}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{03CA137B-ABFD-4B1B-AD24-9A9B7111161C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03CA137B-ABFD-4B1B-AD24-9A9B7111161C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03CA137B-ABFD-4B1B-AD24-9A9B7111161C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2279A9E7-540D-4BF3-A1F6-87B6C1D51443}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2279A9E7-540D-4BF3-A1F6-87B6C1D51443}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2279A9E7-540D-4BF3-A1F6-87B6C1D51443}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2279A9E7-540D-4BF3-A1F6-87B6C1D51443}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

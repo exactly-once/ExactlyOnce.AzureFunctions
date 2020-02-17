@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
+using Microsoft.Azure.Storage;
 using Microsoft.Extensions.Logging;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
-    class HandlerInvoker
+    public class HandlerInvoker
     {
         private readonly StateStore stateStore;
         private readonly ILogger<HandlerInvoker> logger;
@@ -39,13 +39,28 @@ namespace ExactlyOnce.AzureFunctions.Sample
             return outputMessages.ToArray();
         }
 
-        static List<Message> InvokeHandler(Type handlerType, Message inputMessage, object state)
+        static List<Message> InvokeHandler(Type handlerType, Message message, object state)
         {
             var handler = Activator.CreateInstance(handlerType);
-            var handlerContext = new HandlerContext(inputMessage.Id);
+            var handlerContext = new HandlerContext(message.Id);
 
-            ((dynamic) handler).Data = (dynamic)state;
-            ((dynamic) handler).Handle(handlerContext, (dynamic) inputMessage);
+            var dataPropertyName = nameof(Manages<object>.Data);
+            var dataProperty = handlerType.GetProperty(dataPropertyName);
+            if (dataProperty == null)
+            {
+                throw new Exception($"Error calling handler. Can't find ${dataPropertyName}' property");
+            }
+
+            dataProperty?.SetValue(handler, state);
+
+            var handleMethodName = nameof(IHandler<object>.Handle);
+            var handleMethod = handlerType.GetMethod(handleMethodName, new[] {handlerContext.GetType(), message.GetType()});
+            if (handleMethod == null)
+            {
+                throw new Exception($"Error calling handler. Can't find ${handleMethodName}' method");
+            }
+            
+            handleMethod?.Invoke(handler, new object []{handlerContext, message});
             
             return handlerContext.Messages;
         }

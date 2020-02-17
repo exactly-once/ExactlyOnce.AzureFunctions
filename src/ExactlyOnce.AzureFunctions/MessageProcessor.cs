@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
 using Microsoft.WindowsAzure.Storage.Queue;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
-    class MessageProcessor
+    public class MessageProcessor
     {
         HandlerInvoker handlerInvoker;
         MessageSender sender;

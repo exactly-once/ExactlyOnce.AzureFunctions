@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
     public class Envelope
     {

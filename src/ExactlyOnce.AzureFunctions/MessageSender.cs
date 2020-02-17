@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
 using Microsoft.Azure.Storage.Queue;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
-     class MessageSender
+     public class MessageSender
     {
         CloudQueue queue;
 

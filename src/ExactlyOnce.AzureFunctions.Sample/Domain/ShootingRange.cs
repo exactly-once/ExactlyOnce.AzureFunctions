@@ -51,15 +51,4 @@ namespace ExactlyOnce.AzureFunctions.Sample.Domain
             public int NumberOfAttempts { get; set; }
         }
     }
-
-    class Manages<T>
-    {
-        public T Data { get; set; }
-    }
-
-    interface IHandler<T>
-    {
-        Guid Map(T m);
-        void Handle(IHandlerContext context, T message);
-    }
 }

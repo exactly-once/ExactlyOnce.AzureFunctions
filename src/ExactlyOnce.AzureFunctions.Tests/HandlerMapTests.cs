@@ -12,8 +12,8 @@ namespace ExactlyOnce.AzureFunctions.Tests
         {
             var handlersMap = new HandlersMap();
 
-            Assert.Throws<ArgumentException>(() => handlersMap.Initialize(new []{typeof(object)}));
-            Assert.DoesNotThrow(() => handlersMap.Initialize(new []{typeof(SampleHandler)}));
+            Assert.Throws<ArgumentException>(() => handlersMap.AddHandler<object>());
+            Assert.DoesNotThrow(() => handlersMap.AddHandler<SampleHandler>());
         }
 
         [Test]
@@ -21,7 +21,7 @@ namespace ExactlyOnce.AzureFunctions.Tests
         {
             var handlerMap = new HandlersMap();
 
-            handlerMap.Initialize(new []{typeof(SampleHandler)});
+            handlerMap.AddHandler<SampleHandler>();
             var handler = handlerMap.ForMessage(typeof(SampleMessage));
 
             Assert.AreEqual(typeof(SampleHandler), handler.HandlerType);
