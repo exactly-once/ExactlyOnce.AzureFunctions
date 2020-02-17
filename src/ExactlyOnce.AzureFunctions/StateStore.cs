@@ -6,7 +6,7 @@ using Streamstone;
 
 namespace ExactlyOnce.AzureFunctions
 {
-    public class StateStore
+    class StateStore
     {
         readonly CloudTable table;
 

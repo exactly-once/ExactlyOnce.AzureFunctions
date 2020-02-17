@@ -2,7 +2,7 @@
 
 namespace ExactlyOnce.AzureFunctions
 {
-    public class HandlerDescriptor
+    class HandlerDescriptor
     {
         public Guid GetBusinessId(Message message)
         {

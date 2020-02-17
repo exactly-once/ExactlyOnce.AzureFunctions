@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using ExactlyOnce.AzureFunctions.Sample;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
 
 namespace ExactlyOnce.AzureFunctions.Console
 {

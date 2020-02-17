@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExactlyOnce.AzureFunctions.Sample.Domain
+namespace ExactlyOnce.AzureFunctions.Sample
 {
     class LeaderBoard : Manages<LeaderBoard.LeaderBoardData>, IHandler<Hit>, IHandler<Missed>
     {

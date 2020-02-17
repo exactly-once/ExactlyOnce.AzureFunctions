@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ExactlyOnce.AzureFunctions
 {
-    public class HandlersMap
+    class HandlersMap
     {
         readonly Dictionary<Type, HandlerDescriptor> messageToHandler = new Dictionary<Type, HandlerDescriptor>();
 

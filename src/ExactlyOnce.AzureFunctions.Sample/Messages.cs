@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExactlyOnce.AzureFunctions.Sample.Domain
+namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class FireAt : Message
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExactlyOnce.AzureFunctions.Sample.Domain
+namespace ExactlyOnce.AzureFunctions.Sample
 {
     class ShootingRange : Manages<ShootingRange.ShootingRangeData>, IHandler<FireAt>, IHandler<StartNewRound>
     {

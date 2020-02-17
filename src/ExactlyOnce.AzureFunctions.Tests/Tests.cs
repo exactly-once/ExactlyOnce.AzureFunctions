@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ExactlyOnce.AzureFunctions.Sample;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
 using NUnit.Framework;
 
 namespace ExactlyOnce.AzureFunctions.Tests

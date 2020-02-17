@@ -6,7 +6,7 @@ using Microsoft.Azure.Storage.Queue;
 
 namespace ExactlyOnce.AzureFunctions
 {
-     public class MessageSender
+    class MessageSender
     {
         CloudQueue queue;
 

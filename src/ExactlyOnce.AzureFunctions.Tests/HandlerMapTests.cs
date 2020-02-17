@@ -1,6 +1,5 @@
 ﻿using System;
 using ExactlyOnce.AzureFunctions.Sample;
-using ExactlyOnce.AzureFunctions.Sample.Domain;
 using NUnit.Framework;
 
 namespace ExactlyOnce.AzureFunctions.Tests
