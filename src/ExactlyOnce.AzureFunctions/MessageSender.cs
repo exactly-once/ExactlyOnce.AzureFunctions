@@ -15,13 +15,11 @@ namespace ExactlyOnce.AzureFunctions
             this.queue = queue;
         }
 
-        public Task Publish(Message[] messages, Guid? runId = null)
+        public Task Publish(Message[] messages, Dictionary<string, string> headers = null)
         {
             ThrowIfAnyMessageWithEmptyId(messages);
 
-            var headers = runId.HasValue
-                ? new Dictionary<string, string> {{"Message.RunId", runId.ToString()}}
-                : new Dictionary<string, string>();
+            headers ??= new Dictionary<string, string>();
             
             var sendTasks = messages
                 .Select(m =>

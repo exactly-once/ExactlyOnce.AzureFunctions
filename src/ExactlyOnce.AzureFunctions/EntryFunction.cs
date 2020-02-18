@@ -1,11 +1,7 @@
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
-
-[assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Tests")]
-[assembly: InternalsVisibleTo("ExactlyOnce.AzureFunctions.Console")]
 
 namespace ExactlyOnce.AzureFunctions
 {

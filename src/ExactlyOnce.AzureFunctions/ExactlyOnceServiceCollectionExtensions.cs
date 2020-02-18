@@ -13,6 +13,7 @@ namespace ExactlyOnce.AzureFunctions
             services.AddSingleton(p => CreateStateStore());
             services.AddScoped<HandlerInvoker>();
             services.AddSingleton(p => CreateMessageSender());
+            services.AddSingleton(p => CreateAuditSender());
             services.AddScoped<MessageProcessor>();
        
             var handlerMap = new HandlersMap();
@@ -36,23 +37,25 @@ namespace ExactlyOnce.AzureFunctions
             return store;
         }
 
-        internal static MessageSender CreateMessageSender()
+        internal static AuditSender CreateAuditSender() => new AuditSender(GetQueue("audit"));
+        
+        internal static MessageSender CreateMessageSender(string queueName = "test") => new MessageSender(GetQueue(queueName));
+
+        internal static CloudQueue GetQueue(string queueName)
         {
             var storageAccount = Microsoft.Azure.Storage.CloudStorageAccount.Parse("UseDevelopmentStorage=true;");
             CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
-            CloudQueue queue = queueClient.GetQueueReference("test");
+            CloudQueue queue = queueClient.GetQueueReference(queueName);
 
             queue.CreateIfNotExists();
 
-            var sender = new MessageSender(queue);
-
-            return sender;
+            return queue;
         }
     }
 
     public class ExactlyOnceConfiguration
     {
-        private readonly HandlersMap handlersMap;
+        HandlersMap handlersMap;
 
         internal ExactlyOnceConfiguration(HandlersMap handlersMap)
         {

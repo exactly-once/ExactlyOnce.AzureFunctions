@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Queue;
 
@@ -7,25 +9,43 @@ namespace ExactlyOnce.AzureFunctions
     {
         HandlerInvoker handlerInvoker;
         MessageSender sender;
+        AuditSender auditSender;
 
-        public MessageProcessor(HandlerInvoker handlerInvoker, MessageSender sender)
+        public MessageProcessor(HandlerInvoker handlerInvoker, MessageSender sender, AuditSender auditSender)
         {
             this.handlerInvoker = handlerInvoker;
             this.sender = sender;
+            this.auditSender = auditSender;
         }
 
         public async Task Process(CloudQueueMessage queueItem)
         {
-            var (headers, message) = Serializer.Deserialize(queueItem.AsBytes);
+            var (headers, m) = Serializer.Deserialize(queueItem.AsBytes);
 
-            var outputMessages = await handlerInvoker.Process(message as Message);
+            var message = (Message) m;
 
-            //TODO: recreate runId logic
-            //var runId = headers["Message.RunId"];
+            var conversationId = MakeSureConversationIsTracked(message.Id, headers);
 
-            //messageProcessed(runId, message, outputMessages);
+            var outputMessages = await handlerInvoker.Process(message);
 
-            await sender.Publish(outputMessages, null);
+            var outputHeaders = new Dictionary<string, string>
+            {
+                { Headers.ConversationId, conversationId }
+            };
+
+            await sender.Publish(outputMessages, outputHeaders);
+
+            await auditSender.Publish(conversationId, outputMessages.Length - 1);
+        }
+
+        string MakeSureConversationIsTracked(Guid messageId, Dictionary<string, string> headers)
+        {
+            if (headers.ContainsKey(Headers.ConversationId) == false)
+            {
+                headers[Headers.ConversationId] = messageId.ToString();
+            }
+
+            return headers[Headers.ConversationId];
         }
     }
 }
