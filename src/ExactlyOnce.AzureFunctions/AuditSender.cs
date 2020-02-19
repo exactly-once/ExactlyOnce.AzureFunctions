@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -14,12 +15,13 @@ namespace ExactlyOnce.AzureFunctions
             this.auditQueue = auditQueue;
         }
 
-        public Task Publish(string conversationId, int messageDelta)
+        public Task Publish(string conversationId, Guid processedMessageId, Guid[] inflightMessageIds)
         {
             var content = new Dictionary<string, string>
             {
                 {Headers.ConversationId, conversationId },
-                {Headers.AuditMessageDelta, messageDelta.ToString() }
+                {Headers.AuditProcessedMessageId, processedMessageId.ToString() },
+                {Headers.AuditInFlightMessageIds, string.Join(",", inflightMessageIds) }
             };
 
             var json = JsonSerializer.Serialize(content);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Queue;
 
@@ -35,7 +36,7 @@ namespace ExactlyOnce.AzureFunctions
 
             await sender.Publish(outputMessages, outputHeaders);
 
-            await auditSender.Publish(conversationId, outputMessages.Length - 1);
+            await auditSender.Publish(conversationId, message.Id, outputMessages.Select(m => m.Id).ToArray());
         }
 
         string MakeSureConversationIsTracked(Guid messageId, Dictionary<string, string> headers)

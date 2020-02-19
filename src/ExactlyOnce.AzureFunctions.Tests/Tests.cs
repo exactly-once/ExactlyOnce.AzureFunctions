@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,11 +49,20 @@ namespace ExactlyOnce.AzureFunctions.Tests
             var shootingRange = Load<LeaderBoard>(gameId);
         }
 
-        async Task SendAndWait(Message startNewRound)
+        async Task SendAndWait(Message message)
         {
-            await sender.Publish(new[] {startNewRound});
+            var conversationId = Guid.NewGuid();
 
-            await receiver.WaitForConversationToFinish(startNewRound.Id);
+            receiver.SetupConversationTracking(conversationId, message.Id);
+
+            await sender.Publish(
+                new[] {message}, 
+                new Dictionary<string, string>
+                {
+                    {Headers.ConversationId, conversationId.ToString() }
+                });
+
+            await receiver.WaitForConversationToFinish(conversationId);
         }
 
         async Task<T> Load<T>(Guid gameId)
@@ -84,16 +94,22 @@ namespace ExactlyOnce.AzureFunctions.Tests
             {
                 while (cts.IsCancellationRequested == false)
                 {
-                    var message = await auditQueue.GetMessageAsync(cts.Token);
-
-                    if (message != null)
+                    try
                     {
-                        var content = JsonSerializer.Deserialize<Dictionary<string, string>>(message.AsString);
+                        var message = await auditQueue.GetMessageAsync(cts.Token);
 
-                        UpdateConversations(content);
+                        if (message != null)
+                        {
+                            var content = JsonSerializer.Deserialize<Dictionary<string, string>>(message.AsString);
+
+                            UpdateConversations(content);
+                        }
+
+                        await Task.Delay(TimeSpan.FromMilliseconds(100), cts.Token);
                     }
-
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), cts.Token);
+                    catch (TaskCanceledException)
+                    {
+                    }
                 }
             });
         }
@@ -108,47 +124,67 @@ namespace ExactlyOnce.AzureFunctions.Tests
         void UpdateConversations(Dictionary<string, string> headers)
         {
             var conversationId = Guid.Parse(headers[Headers.ConversationId]);
-            var messageDelta = int.Parse(headers[Headers.AuditMessageDelta]);
+            var processedMessageId = Guid.Parse(headers[Headers.AuditProcessedMessageId]);
+            var inflightMessageIds = headers[Headers.AuditInFlightMessageIds]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(Guid.Parse)
+                .ToArray();
 
             conversations.AddOrUpdate(
                 conversationId,
-                id => new ConversationState
-                {
-                    InFlightMessages = 1 + messageDelta,
-                    CompletionSource = new TaskCompletionSource<bool>()
-                },
-                (id, s) =>
-                {
-                    s.InFlightMessages += messageDelta;
-
-                    if (s.InFlightMessages == 0)
-                    {
-                        s.CompletionSource.SetResult(true);
-                    }
-
-                    return s;
-                });
+                id => throw new Exception($"Failed to update conversation: {conversationId}. Make sure to call {nameof(SetupConversationTracking)} before sending initial message."),
+                (id, s) => s.Update(processedMessageId, inflightMessageIds));
         }
 
         public Task WaitForConversationToFinish(Guid conversationId)
         {
-            var conversationState = conversations.AddOrUpdate(
-                conversationId,
-                id => new ConversationState
-                {
-                    InFlightMessages = 1,
-                    CompletionSource = new TaskCompletionSource<bool>()
-                },
-                (id, state) => state);
+            return conversations[conversationId].CompletionSource.Task;
+        }
 
-            return conversationState.CompletionSource.Task;
+        public void SetupConversationTracking(Guid conversationId, Guid firstMessageId)
+        {
+            var added = conversations.TryAdd(conversationId, new ConversationState(firstMessageId));
+
+            if (added == false)
+            {
+                throw new Exception($"Failed to setup conversation tracking for {conversationId}.");
+            }
         }
 
         class ConversationState
         {
-            public int InFlightMessages { get; set; }
+            Dictionary<Guid, bool> processed = new Dictionary<Guid, bool>();
 
-            public TaskCompletionSource<bool> CompletionSource { get; set; }
+            public ConversationState(Guid initialMessageId)
+            {
+                AddIfNotInProcessed(initialMessageId);
+            }
+
+            public ConversationState Update(Guid processedId, Guid[] inFlightIds)
+            {
+                AddIfNotInProcessed(processedId);
+
+                processed[processedId] = true;
+
+                inFlightIds.ToList().ForEach(AddIfNotInProcessed);
+
+                if (processed.All(kv => kv.Value))
+                {
+                    CompletionSource.SetResult(true);
+                }
+
+                return this;
+            }
+
+            void AddIfNotInProcessed(Guid id)
+            {
+                if (processed.ContainsKey(id) == false)
+                {
+                    processed.Add(id, false);
+                }
+            }
+
+            public TaskCompletionSource<bool> CompletionSource { get; } = new TaskCompletionSource<bool>();
         }
     }
 }
