@@ -1,40 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace ExactlyOnce.AzureFunctions
 {
     class HandlerInvoker
     {
         HandlersMap handlersMap;
-        ILogger<HandlerInvoker> logger;
-        StateStore stateStore;
-
-        public HandlerInvoker(StateStore stateStore, ILogger<HandlerInvoker> logger, HandlersMap handlersMap)
+        public HandlerInvoker(HandlersMap handlersMap)
         {
-            this.stateStore = stateStore;
-            this.logger = logger;
             this.handlersMap = handlersMap;
         }
 
-        public async Task<Message[]> Process(Message message)
+        public HandlerDescriptor GetHandler(Message message)
         {
-            var handler = handlersMap.ForMessage(message.GetType());
+            return handlersMap.ForMessage(message.GetType());
+        }
 
-            var businessId = handler.GetBusinessId(message);
-
-            var (state, stream, duplicate) = await stateStore.LoadState(handler.DataType, businessId, message.Id);
-
-            logger.LogInformation(
-                $"Invoking {handler.HandlerType.Name}. Message:[type={message.GetType().Name}:id={message.Id.ToString("N").Substring(0, 4)}:dup={duplicate}]");
-
+        public Message[] Process(Message message, HandlerDescriptor handler, object state)
+        {
             var outputMessages = InvokeHandler(handler.HandlerType, message, state);
-
-            if (duplicate == false)
-            {
-                await stateStore.SaveState(stream, state, message.Id);
-            }
 
             return outputMessages.ToArray();
         }

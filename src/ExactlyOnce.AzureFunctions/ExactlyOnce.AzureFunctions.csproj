@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
@@ -8,5 +8,6 @@
    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.10" />
    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
    <PackageReference Include="Streamstone" Version="2.3.0" />
+   <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.8.0" />
  </ItemGroup>
 </Project>

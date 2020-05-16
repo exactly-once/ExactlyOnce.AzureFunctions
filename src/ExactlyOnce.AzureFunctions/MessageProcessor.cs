@@ -11,9 +11,11 @@ namespace ExactlyOnce.AzureFunctions
         HandlerInvoker handlerInvoker;
         MessageSender sender;
         AuditSender auditSender;
+        StateBasedExactlyOnce exactlyOnce;
 
-        public MessageProcessor(HandlerInvoker handlerInvoker, MessageSender sender, AuditSender auditSender)
+        public MessageProcessor(StateBasedExactlyOnce exactlyOnce, HandlerInvoker handlerInvoker, MessageSender sender, AuditSender auditSender)
         {
+            this.exactlyOnce = exactlyOnce;
             this.handlerInvoker = handlerInvoker;
             this.sender = sender;
             this.auditSender = auditSender;
@@ -27,16 +29,25 @@ namespace ExactlyOnce.AzureFunctions
 
             var conversationId = MakeSureConversationIsTracked(message.Id, headers);
 
-            var outputMessages = await handlerInvoker.Process(message);
+            var handler = handlerInvoker.GetHandler(message);
+            var businessId = handler.GetBusinessId(message);
 
-            var outputHeaders = new Dictionary<string, string>
+            async Task Publish(Message[] messages)
             {
-                { Headers.ConversationId, conversationId }
-            };
+                var outputHeaders = new Dictionary<string, string>
+                {
+                    {Headers.ConversationId, conversationId}
+                };
+                await sender.Publish(messages, outputHeaders);
+                await auditSender.Publish(conversationId, message.Id, messages.Select(m => m.Id).ToArray());
+            }
 
-            await sender.Publish(outputMessages, outputHeaders);
+            Message[] Handle(Message inputMessage, object state)
+            {
+                return handlerInvoker.Process(inputMessage, handler, state);
+            }
 
-            await auditSender.Publish(conversationId, message.Id, outputMessages.Select(m => m.Id).ToArray());
+            await exactlyOnce.Process(businessId, handler.DataType, message, Handle, Publish);
         }
 
         string MakeSureConversationIsTracked(Guid messageId, Dictionary<string, string> headers)

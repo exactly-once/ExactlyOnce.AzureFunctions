@@ -16,6 +16,8 @@ namespace ExactlyOnce.AzureFunctions
             services.AddSingleton(p => CreateAuditSender());
             services.AddScoped<MessageProcessor>();
        
+            services.AddSingleton<StateBasedExactlyOnce>();
+
             var handlerMap = new HandlersMap();
 
             services.AddSingleton(p => handlerMap);

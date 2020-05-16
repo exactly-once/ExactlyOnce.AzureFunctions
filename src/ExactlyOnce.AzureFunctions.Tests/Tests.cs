@@ -110,6 +110,10 @@ namespace ExactlyOnce.AzureFunctions.Tests
                     catch (TaskCanceledException)
                     {
                     }
+                    catch (Exception e)
+                    {
+                        TestContext.WriteLine($"Receiver exception {e.Message}");
+                    }
                 }
             });
         }
