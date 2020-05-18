@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using ExactlyOnce.AzureFunctions.CosmosDb;
 using ExactlyOnce.AzureFunctions.Sample;
 using Microsoft.Azure.Storage.Queue;
 using NUnit.Framework;
@@ -14,14 +16,16 @@ namespace ExactlyOnce.AzureFunctions.Tests
     public class Tests
     {
         MessageSender sender;
-        StateStore store;
+        CosmosDbStateStore store;
         MessageReceiver receiver;
 
         [SetUp]
         public void SetUp()
         {
             sender = ExactlyOnceServiceCollectionExtensions.CreateMessageSender();
-            store = ExactlyOnceServiceCollectionExtensions.CreateStateStore();
+
+            store = new CosmosDbStateStore();
+            store.Initialize();
 
             var auditQueue = ExactlyOnceServiceCollectionExtensions.GetQueue("audit");
             receiver = new MessageReceiver(auditQueue);
@@ -36,7 +40,7 @@ namespace ExactlyOnce.AzureFunctions.Tests
         }
 
         [Test]
-        public async Task DuplicatedMessages()
+        public async Task DuplicateFireAt()
         {
             var gameId = Guid.NewGuid();
             var startNewRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
@@ -46,30 +50,104 @@ namespace ExactlyOnce.AzureFunctions.Tests
             await SendAndWait(fireAt);
             await SendAndWait(fireAt);
 
-            var shootingRange = Load<LeaderBoard>(gameId);
+            var shootingRange = await Load<LeaderBoard.LeaderBoardData>(gameId);
+
+            Assert.AreEqual(1, shootingRange.NumberOfHits);
+            Assert.AreEqual(0, shootingRange.NumberOfMisses);
+        }
+
+        [Test]
+        public async Task ConcurrentDuplicates()
+        {
+            var gameId = Guid.NewGuid();
+            var startNewRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
+            var firstAttempt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
+            var secondAttempt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
+
+            await SendAndWait(startNewRound);
+
+            var firstAttemptNo = 100;
+            var secondAttemptNo = 120;
+
+            var tasks = Enumerable.Range(1, firstAttemptNo).Select(_ => Send(firstAttempt))
+                 .Union(Enumerable.Range(1, secondAttemptNo).Select(_ => Send(secondAttempt))).ToArray();
+
+            await Task.WhenAll(tasks);
+
+            var shootingRange = await Load<LeaderBoard.LeaderBoardData>(
+                gameId,
+                s => s.NumberOfHits == 2,
+                10000);
+
+            Assert.AreEqual(2, shootingRange.NumberOfHits);
+            Assert.AreEqual(0, shootingRange.NumberOfMisses);
+        }
+
+        [Test]
+        public async Task DuplicateStartNewRound()
+        {
+            var gameId = Guid.NewGuid();
+            var startFirstRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
+            var fireAt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 7};
+            var startSecondRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 10};
+
+            await SendAndWait(startFirstRound);
+            await SendAndWait(startSecondRound);
+            await SendAndWait(fireAt);
+            await SendAndWait(startFirstRound);
+
+            var shootingRange = await Load<ShootingRange.ShootingRangeData>(gameId);
+
+            Assert.AreEqual(10, shootingRange.TargetPosition);
+            Assert.AreEqual(1, shootingRange.NumberOfAttempts);
         }
 
         async Task SendAndWait(Message message)
+        {
+            await await Send(message);
+        }
+
+        async Task<Task> Send(Message message)
         {
             var conversationId = Guid.NewGuid();
 
             receiver.SetupConversationTracking(conversationId, message.Id);
 
             await sender.Publish(
-                new[] {message}, 
+                new[] {message},
                 new Dictionary<string, string>
                 {
-                    {Headers.ConversationId, conversationId.ToString() }
+                    {Headers.ConversationId, conversationId.ToString()}
                 });
 
-            await receiver.WaitForConversationToFinish(conversationId);
+            var waitForFinishTask = receiver.WaitForConversationToFinish(conversationId);
+            
+            return waitForFinishTask;
         }
 
-        async Task<T> Load<T>(Guid gameId)
+        async Task<T> Load<T>(Guid itemId, Func<T, bool> precondition = null, int timeoutInMs = 5000) where T : class
         {
-            var (state, _, __) = await store.LoadState(typeof(T), gameId, Guid.Empty);
-         
-            return (T)state;
+            //HINT: We don't have default session consistency guarantee here (writes are done from the host).
+            //      precondition enables waiting until consistent prefix catches up.
+            //      This is not fully safe though as we don't know if there is no more state changes happening.
+
+            precondition = precondition ?? ((_) => true);
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            while (sw.ElapsedMilliseconds < timeoutInMs)
+            {
+                var item = await store.Load(itemId, typeof(T));
+
+                if (item?.Item is T state && precondition(state))
+                {
+                    return state;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
+            }
+
+            throw new AssertionException($"Load precondition failure for state {itemId}.");
         }
     }
 
@@ -134,9 +212,14 @@ namespace ExactlyOnce.AzureFunctions.Tests
                 .Select(Guid.Parse)
                 .ToArray();
 
+            if (conversations.ContainsKey(conversationId) == false)
+            {
+                return;
+            }
+
             conversations.AddOrUpdate(
                 conversationId,
-                id => throw new Exception($"Failed to update conversation: {conversationId}. Make sure to call {nameof(SetupConversationTracking)} before sending initial message."),
+                id => throw new Exception("Invalid conversation tracking state."),
                 (id, s) => s.Update(processedMessageId, inflightMessageIds));
         }
 

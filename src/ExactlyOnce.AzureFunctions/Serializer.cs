@@ -11,6 +11,13 @@ namespace ExactlyOnce.AzureFunctions
 
         public static byte[] Serialize(object message, Dictionary<string, string> headers)
         {
+            var text = TextSerialize(message, headers);
+
+            return Encoding.UTF8.GetBytes(text);
+        }
+
+        public static string TextSerialize(object message, Dictionary<string, string> headers)
+        {
             headers.Add(MessageTypeName, message.GetType().AssemblyQualifiedName);
 
             var envelope = new Envelope
@@ -20,13 +27,18 @@ namespace ExactlyOnce.AzureFunctions
             };
 
             var text = JsonSerializer.Serialize(envelope);
-
-            return Encoding.UTF8.GetBytes(text);
+            return text;
         }
 
         public static (Dictionary<string, string>, object) Deserialize(byte[] body)
         {
             var text = Encoding.UTF8.GetString(body);
+
+            return TextDeserialize(text);
+        }
+
+        public static (Dictionary<string, string>, object) TextDeserialize(string text)
+        {
             var envelope = JsonSerializer.Deserialize<Envelope>(text);
 
             var messageType = envelope.Headers[Serializer.MessageTypeName];

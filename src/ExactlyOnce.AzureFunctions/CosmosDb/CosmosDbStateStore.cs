@@ -15,24 +15,23 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         CosmosClient cosmosClient;
         Database database;
-        Container container;
 
         string databaseId = "ExactlyOnce";
-        string containerId = "State";
-        string partitionKeyPath = "/Id";
 
         public async Task Initialize()
         {
             cosmosClient = new CosmosClient(EndpointUri, PrimaryKey);
 
             database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
-
-            container = await database.CreateContainerIfNotExistsAsync(containerId, partitionKeyPath);
         }
 
         public async Task<CosmosDbE1Item> Load(Guid itemId, Type stateType)
         {
-            using var response = await container.ReadItemStreamAsync(itemId.ToString(), PartitionKey.None);
+            Container container = await database
+                .DefineContainer(stateType.Name, "/id")
+                .CreateIfNotExistsAsync();
+                
+            using var response = await container.ReadItemStreamAsync(itemId.ToString(), new PartitionKey(itemId.ToString()));
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -61,12 +60,25 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         public async Task Persist(CosmosDbE1Item item)
         {
-            var response = await container.UpsertItemAsync(
-                item.Item, 
-                requestOptions: new ItemRequestOptions
-                {
-                    IfMatchEtag = item.ETag,
-                });
+            Container container = await database
+                .DefineContainer(item.Item.GetType().Name, "/id")
+                .CreateIfNotExistsAsync();
+
+            ItemResponse<CosmosDbE1Content> response;
+
+            if (item.ETag == null)
+            {
+                response = await container.CreateItemAsync(item.Item, new PartitionKey(item.Item.Id));
+            }
+            else
+            {
+                response = await container.UpsertItemAsync(
+                    item.Item,
+                    requestOptions: new ItemRequestOptions
+                    {
+                        IfMatchEtag = item.ETag,
+                    });
+            }
 
             if (response.StatusCode == HttpStatusCode.PreconditionFailed)
             {

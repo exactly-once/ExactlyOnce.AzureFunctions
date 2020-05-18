@@ -9,6 +9,9 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         public string MessageId { get; set; }
 
+        [JsonIgnore]
         public Message[] OutputMessages { get; set; }
+
+        public string[] OutputMessagesText { get; set; }
     }
 }

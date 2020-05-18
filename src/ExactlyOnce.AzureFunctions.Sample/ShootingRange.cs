@@ -5,8 +5,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     class ShootingRange : Manages<ShootingRange.ShootingRangeData>, IHandler<FireAt>, IHandler<StartNewRound>
     {
-        public const int MaxAttemptsInARound = 2;
-
         public void Handle(IHandlerContext context, FireAt command)
         {
             if (Data.TargetPosition == command.Position)
@@ -25,16 +23,8 @@ namespace ExactlyOnce.AzureFunctions.Sample
                     GameId = command.GameId
                 });
             }
-
-            if (Data.NumberOfAttempts + 1 >= MaxAttemptsInARound)
-            {
-                Data.NumberOfAttempts = 0;
-                Data.TargetPosition = context.Random.Next(0, 100);
-            }
-            else
-            {
-                Data.NumberOfAttempts++;
-            }
+            
+            Data.NumberOfAttempts++;
         }
 
         public void Handle(IHandlerContext context, StartNewRound command)

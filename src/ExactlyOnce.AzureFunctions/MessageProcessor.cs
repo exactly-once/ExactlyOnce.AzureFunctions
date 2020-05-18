@@ -38,6 +38,7 @@ namespace ExactlyOnce.AzureFunctions
                 {
                     {Headers.ConversationId, conversationId}
                 };
+
                 await sender.Publish(messages, outputHeaders);
                 await auditSender.Publish(conversationId, message.Id, messages.Select(m => m.Id).ToArray());
             }

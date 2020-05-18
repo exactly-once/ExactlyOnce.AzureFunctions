@@ -1,4 +1,5 @@
 ﻿using System;
+using ExactlyOnce.AzureFunctions.CosmosDb;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
@@ -7,8 +8,10 @@ namespace ExactlyOnce.AzureFunctions.Sample
         public Guid Map(Hit m) => m.GameId;
         public Guid Map(Missed m) => m.GameId;
 
+
         public void Handle(IHandlerContext context, Hit @event)
         {
+            Console.WriteLine($"##########: Hit saved {@event.Id}");
             Data.NumberOfHits++;
         }
 
@@ -17,7 +20,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
             Data.NumberOfMisses++;
         }
 
-        public class LeaderBoardData
+        public class LeaderBoardData : CosmosDbE1Content
         {
             public int NumberOfHits { get; set; }
             public int NumberOfMisses { get; set; }
