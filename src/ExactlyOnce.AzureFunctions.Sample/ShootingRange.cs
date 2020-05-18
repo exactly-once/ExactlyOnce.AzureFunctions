@@ -1,4 +1,5 @@
 ﻿using System;
+using ExactlyOnce.AzureFunctions.CosmosDb;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
@@ -45,7 +46,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
         public Guid Map(FireAt m) => m.GameId;
         public Guid Map(StartNewRound m) => m.GameId;
 
-        public class ShootingRangeData
+        public class ShootingRangeData : CosmosDbE1Content
         {
             public int TargetPosition { get; set; }
             public int NumberOfAttempts { get; set; }

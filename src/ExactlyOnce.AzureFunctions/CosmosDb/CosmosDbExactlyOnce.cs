@@ -45,13 +45,8 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
                 await FinishTransaction(state);
             }
-
-            if (outboxState.OutputMessages != null)
-            {
-                await publish(outboxState.OutputMessages);
-
-                await outbox.CleanMessages(message.Id).ConfigureAwait(false);
-            }
+            
+            await publish(outboxState.OutputMessages);
         }
 
         async Task FinishTransaction(CosmosDbE1Item state)
@@ -81,6 +76,12 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
             item.Id = businessId.ToString();
 
             return new CosmosDbE1Item {Item = item};
+        }
+
+        public async Task Initialize()
+        {
+            await outbox.Initialize();
+            await stateStore.Initialize();
         }
     }
 }

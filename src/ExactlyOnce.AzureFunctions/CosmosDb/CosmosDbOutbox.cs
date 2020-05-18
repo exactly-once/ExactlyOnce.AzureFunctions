@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions.CosmosDb
 {
@@ -30,14 +32,25 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         public async Task<CosmosDbOutboxState> Get(Guid id)
         {
-            try
-            {
-                return (await container.ReadItemAsync<CosmosDbOutboxState>(id.ToString(), PartitionKey.None)).Resource;
-            }
-            catch (CosmosException e) when (e.StatusCode == HttpStatusCode.NotFound)
+            using var response = await container.ReadItemStreamAsync(id.ToString(), PartitionKey.None);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return null;
             }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception(response.ErrorMessage);
+            }
+
+            using var streamReader = new StreamReader(response.Content);
+
+            var content = await streamReader.ReadToEndAsync();
+
+            var item = JsonConvert.DeserializeObject<CosmosDbOutboxState>(content);
+
+            return item;
         }
 
         public Task CleanMessages(Guid messageId)

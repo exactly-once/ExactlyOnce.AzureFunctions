@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Cosmos.Table;
+﻿using ExactlyOnce.AzureFunctions.CosmosDb;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.Storage.Queue;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,8 +16,23 @@ namespace ExactlyOnce.AzureFunctions
             services.AddSingleton(p => CreateMessageSender());
             services.AddSingleton(p => CreateAuditSender());
             services.AddScoped<MessageProcessor>();
-       
+
+            //State based exactly-once 
+            /* 
             services.AddSingleton<StateBasedExactlyOnce>();
+            services.AddSingleton<IExactlyOnce>(sp => sp.GetRequiredService<StateBasedExactlyOnce>());
+            */
+
+            services.AddSingleton<CosmosDbOutbox>();
+            services.AddSingleton<CosmosDbStateStore>();
+            services.AddSingleton<CosmosDbExactlyOnce>();
+            services.AddSingleton<IExactlyOnce>(sp =>
+            {
+                var instance = sp.GetRequiredService<CosmosDbExactlyOnce>();
+                instance.Initialize().GetAwaiter().GetResult();
+
+                return instance;
+            });
 
             var handlerMap = new HandlersMap();
 

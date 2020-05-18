@@ -18,7 +18,7 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
         Container container;
 
         string databaseId = "ExactlyOnce";
-        string containerId = "Sagas";
+        string containerId = "State";
         string partitionKeyPath = "/Id";
 
         public async Task Initialize()
@@ -33,11 +33,15 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
         public async Task<CosmosDbE1Item> Load(Guid itemId, Type stateType)
         {
             using var response = await container.ReadItemStreamAsync(itemId.ToString(), PartitionKey.None);
-            
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
             if (!response.IsSuccessStatusCode)
             {
-                //Handle and log exception
-                throw new Exception("What is going on here?");
+                throw new Exception(response.ErrorMessage);
             }
 
             using var streamReader = new StreamReader(response.Content);

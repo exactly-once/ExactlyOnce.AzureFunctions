@@ -11,9 +11,9 @@ namespace ExactlyOnce.AzureFunctions
         HandlerInvoker handlerInvoker;
         MessageSender sender;
         AuditSender auditSender;
-        StateBasedExactlyOnce exactlyOnce;
+        IExactlyOnce exactlyOnce;
 
-        public MessageProcessor(StateBasedExactlyOnce exactlyOnce, HandlerInvoker handlerInvoker, MessageSender sender, AuditSender auditSender)
+        public MessageProcessor(IExactlyOnce exactlyOnce, HandlerInvoker handlerInvoker, MessageSender sender, AuditSender auditSender)
         {
             this.exactlyOnce = exactlyOnce;
             this.handlerInvoker = handlerInvoker;
