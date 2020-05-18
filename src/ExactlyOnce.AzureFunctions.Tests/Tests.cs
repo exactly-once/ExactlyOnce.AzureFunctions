@@ -174,9 +174,9 @@ namespace ExactlyOnce.AzureFunctions.Tests
                 {
                     try
                     {
-                        var message = await auditQueue.GetMessageAsync(cts.Token);
+                        var messages = await auditQueue.GetMessagesAsync(32, cts.Token);
 
-                        if (message != null)
+                        foreach (var message in messages)
                         {
                             var content = JsonSerializer.Deserialize<Dictionary<string, string>>(message.AsString);
 
