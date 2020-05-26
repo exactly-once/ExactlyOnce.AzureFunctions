@@ -19,6 +19,11 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
         public void Handle(IHandlerContext context, PlaceOrder message)
         {
             Data.PlacedAt = DateTime.Now;
+
+            context.Publish(new PrepareShipment
+            {
+                Id = message.OrderId.ToGuid()
+            });
         }
 
         public void Handle(IHandlerContext context, ApproveOrder message)

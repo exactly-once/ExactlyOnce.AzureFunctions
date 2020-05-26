@@ -57,7 +57,13 @@ namespace ExactlyOnce.AzureFunctions
 
         internal static AuditSender CreateAuditSender() => new AuditSender(GetQueue("audit"));
         
-        internal static MessageSender CreateMessageSender(string queueName = "test") => new MessageSender(GetQueue(queueName));
+        internal static MessageSender CreateMessageSender(string queueName = "test") => new MessageSender(messageType =>
+        {
+            //TODO: this is hacking and we need proper routing here
+            return messageType.Name == "PrepareShipment" 
+                ? GetQueue("prepare-shipment")
+                : GetQueue(queueName);
+        });
 
         internal static CloudQueue GetQueue(string queueName)
         {

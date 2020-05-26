@@ -2,7 +2,7 @@
 
 namespace ExactlyOnce.AzureFunctions
 {
-    class Envelope
+    public class Envelope
     {
         public Dictionary<string, string> Headers { get; set; }
 

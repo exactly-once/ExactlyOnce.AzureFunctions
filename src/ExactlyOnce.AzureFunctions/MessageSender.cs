@@ -8,11 +8,11 @@ namespace ExactlyOnce.AzureFunctions
 {
     class MessageSender
     {
-        CloudQueue queue;
+        Func<Type, CloudQueue> mapMessageToQueue;
 
-        public MessageSender(CloudQueue queue)
+        public MessageSender(Func<Type, CloudQueue> mapMessageToQueue)
         {
-            this.queue = queue;
+            this.mapMessageToQueue = mapMessageToQueue;
         }
 
         public Task Publish(Message[] messages, Dictionary<string, string> headers = null)
@@ -20,16 +20,16 @@ namespace ExactlyOnce.AzureFunctions
             ThrowIfAnyMessageWithEmptyId(messages);
 
             headers ??= new Dictionary<string, string>();
-            
+
             var sendTasks = messages
                 .Select(m =>
                 {
                     var content = Serializer.Serialize(m, headers);
 
-                    return new CloudQueueMessage(content);
-                })
-                .Select(qm => queue.AddMessageAsync(qm));
-            
+                    var queueMessage = new CloudQueueMessage(content);
+                    
+                    return mapMessageToQueue(m.GetType()).AddMessageAsync(queueMessage);
+                });
 
             return Task.WhenAll(sendTasks.ToArray());
         }

@@ -9,4 +9,8 @@
     {
         public string OrderId { get; set; }
     }
+
+    public class PrepareShipment : Message
+    {
+    }
 }
