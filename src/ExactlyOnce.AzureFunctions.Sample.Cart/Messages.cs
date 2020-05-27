@@ -13,4 +13,9 @@
     public class PrepareShipment : Message
     {
     }
+
+    public class PrepareShipmentResponse : Message
+    {
+
+    }
 }

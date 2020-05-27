@@ -9,6 +9,8 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
     {
         public void Configure(IWebJobsBuilder builder)
         {
+            builder.AddExtension<ExactlyOnceExtensions>();
+
             builder.Services.AddExactlyOnce()
                 .AddHandler<OrderWorkflow>();
         }
