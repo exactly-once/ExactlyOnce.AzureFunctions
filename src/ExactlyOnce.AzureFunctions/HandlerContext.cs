@@ -13,7 +13,7 @@ namespace ExactlyOnce.AzureFunctions
         
         public Random Random { get; }
 
-        public List<Message> Messages { get; set; } = new List<Message>();
+        public List<object> Messages { get; set; } = new List<object>();
 
         public HandlerContext(Guid seed)
         {
@@ -22,7 +22,7 @@ namespace ExactlyOnce.AzureFunctions
             Random = new Random(seed.ToString().GetHashCode());
         }
 
-        public void Publish(Message message)
+        public void Publish(object message)
         {
             Messages.Add(message);
         }
@@ -40,7 +40,7 @@ namespace ExactlyOnce.AzureFunctions
 
     public interface IHandlerContext
     {
-        void Publish(Message message);
+        void Publish(object message);
 
         Guid NewGuid();
 

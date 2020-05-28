@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Storage.Queue;
 
@@ -15,38 +14,15 @@ namespace ExactlyOnce.AzureFunctions
             this.mapMessageToQueue = mapMessageToQueue;
         }
 
-        public Task Publish(Message[] messages, Dictionary<string, string> headers = null)
+        public Task Publish(Guid messageId, object message, Dictionary<string, string> headers = null)
         {
-            ThrowIfAnyMessageWithEmptyId(messages);
-
             headers ??= new Dictionary<string, string>();
 
-            var sendTasks = messages
-                .Select(m =>
-                {
-                    var content = Serializer.Serialize(m, headers);
+            var messageBytes = MessageSerializer.ToBytes(messageId, headers, message);
 
-                    var queueMessage = new CloudQueueMessage(content);
+            var queueMessage = new CloudQueueMessage(messageBytes);
                     
-                    return mapMessageToQueue(m.GetType()).AddMessageAsync(queueMessage);
-                });
-
-            return Task.WhenAll(sendTasks.ToArray());
-        }
-
-        private static void ThrowIfAnyMessageWithEmptyId(Message[] messages)
-        {
-            var messagesWithEmptyIds = messages.Where(m => m.Id == Guid.Empty).ToArray();
-
-            if (messagesWithEmptyIds.Any())
-            {
-                var messageTypeNames = string.Join(
-                    ",",
-                    messagesWithEmptyIds.Select(m => $"{m.GetType().Name}")
-                    );
-
-                throw new Exception($"Can't send [{messageTypeNames}] messages with empty identifiers.");
-            }
+            return mapMessageToQueue(message.GetType()).AddMessageAsync(queueMessage);
         }
     }
 }

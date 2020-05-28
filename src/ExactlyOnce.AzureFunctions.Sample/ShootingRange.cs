@@ -11,7 +11,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
             {
                 context.Publish(new Hit
                 {
-                    Id = context.NewGuid(),
                     GameId = command.GameId
                 });
             }
@@ -19,7 +18,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
             {
                 context.Publish(new Missed
                 {
-                    Id = context.NewGuid(),
                     GameId = command.GameId
                 });
             }

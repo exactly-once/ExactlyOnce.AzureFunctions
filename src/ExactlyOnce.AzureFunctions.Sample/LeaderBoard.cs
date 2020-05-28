@@ -11,7 +11,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
         public void Handle(IHandlerContext context, Hit @event)
         {
-            Console.WriteLine($"##########: Hit saved {@event.Id}");
+            Console.WriteLine($"##########: Hit saved {@event.GameId}");
             Data.NumberOfHits++;
         }
 

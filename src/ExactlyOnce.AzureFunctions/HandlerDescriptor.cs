@@ -4,7 +4,7 @@ namespace ExactlyOnce.AzureFunctions
 {
     class HandlerDescriptor
     {
-        public Guid GetBusinessId(Message message)
+        public Guid GetBusinessId(object message)
         {
             var handler = Activator.CreateInstance(HandlerType);
 

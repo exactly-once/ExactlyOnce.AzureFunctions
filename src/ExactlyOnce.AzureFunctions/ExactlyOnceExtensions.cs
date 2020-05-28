@@ -4,17 +4,29 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Description;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Config;
+using Microsoft.Extensions.Configuration;
 
 namespace ExactlyOnce.AzureFunctions
 {
     [Extension("ExactlyOnce")]
     public class ExactlyOnceExtensions : IExtensionConfigProvider
     {
+        IConfiguration configuration;
+        MessageSender messageSender;
+
+        public ExactlyOnceExtensions(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
+
         public void Initialize(ExtensionConfigContext context)
         {
             var rule = context.AddBindingRule<ExactlyOnceResponseAttribute>();            
  
-            rule.BindToCollector<ResponseCollectorOpenType>(typeof(ResponseCollectorConverter<>), this);     
+            rule.BindToCollector<ResponseCollectorOpenType>(typeof(ResponseCollectorConverter<>), this);
+
+            var mainQueueName = configuration["ExactlyOnceInputQueue"];
+            messageSender = ExactlyOnceServiceCollectionExtensions.CreateMessageSender(mainQueueName);
         }
  
         class ResponseCollectorOpenType : OpenType.Poco
@@ -36,9 +48,13 @@ namespace ExactlyOnce.AzureFunctions
             }
         }
 
-        public ResponseCollectorContext CreateContext(ExactlyOnceResponseAttribute attribute)
+        internal ResponseCollectorContext CreateContext(ExactlyOnceResponseAttribute attribute)
         {
-            return new ResponseCollectorContext{ ResolvedAttribute = attribute};
+            return new ResponseCollectorContext
+            {
+                ResolvedAttribute = attribute,
+                Sender = messageSender
+            };
         }
     }
 }

@@ -43,8 +43,9 @@ namespace ExactlyOnce.AzureFunctions.Tests
         public async Task DuplicateFireAt()
         {
             var gameId = Guid.NewGuid();
-            var startNewRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
-            var fireAt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
+            
+            var startNewRound = new StartNewRound{GameId = gameId, Position = 5}.ToEnvelope();
+            var fireAt = new FireAt{GameId = gameId, Position = 5}.ToEnvelope();
 
             await SendAndWait(startNewRound);
             await SendAndWait(fireAt);
@@ -60,9 +61,10 @@ namespace ExactlyOnce.AzureFunctions.Tests
         public async Task ConcurrentDuplicates()
         {
             var gameId = Guid.NewGuid();
-            var startNewRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
-            var firstAttempt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
-            var secondAttempt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
+
+            var startNewRound = new StartNewRound{GameId = gameId, Position = 5}.ToEnvelope();
+            var firstAttempt = new FireAt{GameId = gameId, Position = 5}.ToEnvelope();
+            var secondAttempt = new FireAt{GameId = gameId, Position = 5}.ToEnvelope();
 
             await SendAndWait(startNewRound);
 
@@ -77,7 +79,7 @@ namespace ExactlyOnce.AzureFunctions.Tests
             var shootingRange = await Load<LeaderBoard.LeaderBoardData>(
                 gameId,
                 s => s.NumberOfHits == 2,
-                10000);
+                30000);
 
             Assert.AreEqual(2, shootingRange.NumberOfHits);
             Assert.AreEqual(0, shootingRange.NumberOfMisses);
@@ -87,9 +89,10 @@ namespace ExactlyOnce.AzureFunctions.Tests
         public async Task DuplicateStartNewRound()
         {
             var gameId = Guid.NewGuid();
-            var startFirstRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 5};
-            var fireAt = new FireAt{Id = Guid.NewGuid(), GameId = gameId, Position = 7};
-            var startSecondRound = new StartNewRound{Id = Guid.NewGuid(), GameId = gameId, Position = 10};
+            
+            var startFirstRound = new StartNewRound{GameId = gameId, Position = 5}.ToEnvelope();
+            var fireAt = new FireAt{GameId = gameId, Position = 7}.ToEnvelope();
+            var startSecondRound = new StartNewRound{GameId = gameId, Position = 10}.ToEnvelope();
 
             await SendAndWait(startFirstRound);
             await SendAndWait(startSecondRound);
@@ -102,19 +105,20 @@ namespace ExactlyOnce.AzureFunctions.Tests
             Assert.AreEqual(1, shootingRange.NumberOfAttempts);
         }
 
-        async Task SendAndWait(Message message)
+        async Task SendAndWait(Envelope envelope)
         {
-            await await Send(message);
+            await await Send(envelope);
         }
 
-        async Task<Task> Send(Message message)
+        async Task<Task> Send(Envelope envelope)
         {
             var conversationId = Guid.NewGuid();
 
-            receiver.SetupConversationTracking(conversationId, message.Id);
+            receiver.SetupConversationTracking(conversationId, envelope.Id);
 
             await sender.Publish(
-                new[] {message},
+                envelope.Id,
+                envelope.Message,
                 new Dictionary<string, string>
                 {
                     {Headers.ConversationId, conversationId.ToString()}
@@ -273,5 +277,20 @@ namespace ExactlyOnce.AzureFunctions.Tests
 
             public TaskCompletionSource<bool> CompletionSource { get; } = new TaskCompletionSource<bool>();
         }
+    }
+
+    static class ObjectExtensions
+    {
+        public static Envelope ToEnvelope(this object message)
+        {
+            return new Envelope {Id = Guid.NewGuid(), Message = message};
+        }
+    }
+
+    class Envelope
+    {
+        public Guid Id { get; set; }
+
+        public object Message { get; set; }
     }
 }

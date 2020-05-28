@@ -19,12 +19,11 @@ namespace ExactlyOnce.AzureFunctions.Console
 
                 var message = new StartNewRound
                 {
-                    Id = Guid.NewGuid(),
                     GameId = Guid.Empty, 
                     Position = 10 + (i++)
                 };
 
-                await sender.Publish(new Message[]{message});
+                await sender.Publish(Guid.NewGuid(), message);
             }
         }
     }

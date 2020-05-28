@@ -1,8 +1,9 @@
 ﻿namespace ExactlyOnce.AzureFunctions
 {
-    public class ResponseCollectorContext
+    class ResponseCollectorContext
     {
         public ExactlyOnceResponseAttribute ResolvedAttribute { get; set; }
 
+        public MessageSender Sender { get; set; }
     }
 }

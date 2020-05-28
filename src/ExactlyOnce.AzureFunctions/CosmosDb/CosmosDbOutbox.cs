@@ -52,13 +52,17 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
             var item = JsonConvert.DeserializeObject<CosmosDbOutboxState>(content);
 
-            item.OutputMessages = item.OutputMessagesText
+            var outputMessages = item.OutputMessagesText
                 .Select(mt =>
                 {
-                    var (_, b) = Serializer.TextDeserialize(mt);
+                    var (headers, message) = MessageSerializer.FromJson(mt);
+                    var messageId = Guid.Parse(headers[Headers.MessageId]);
 
-                    return (Message) b;
+                    return (messageId, message);
                 }).ToArray();
+
+            item.OutputMessages = outputMessages.Select(i => i.message).ToArray();
+            item.OutputMessagesIds = outputMessages.Select(i => i.messageId).ToArray();
 
             return item;
         }
@@ -81,8 +85,15 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         public async Task Store(CosmosDbOutboxState outboxState)
         {
-            outboxState.OutputMessagesText = outboxState.OutputMessages
-                .Select(m => Serializer.TextSerialize(m, new Dictionary<string, string>())).ToArray();
+            outboxState.OutputMessagesText =
+                Enumerable.Range(0, outboxState.OutputMessages.Length)
+                    .Select(i =>
+                    {
+                        var messageId = outboxState.OutputMessagesIds[i];
+                        var message = outboxState.OutputMessages[i];
+
+                        return MessageSerializer.ToJson(messageId, new Dictionary<string, string>(), message);
+                    }).ToArray();
 
             var response = await container.UpsertItemAsync(outboxState);
 

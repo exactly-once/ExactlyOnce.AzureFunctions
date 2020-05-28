@@ -2,24 +2,24 @@
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
-    public class FireAt : Message
+    public class FireAt
     {
         public Guid GameId { get; set; }
         public int Position { get; set; }
     }
 
-    public class StartNewRound : Message
+    public class StartNewRound
     {
         public Guid GameId { get; set; }
         public int Position { get; set; }
     }
 
-    public class Hit : Message
+    public class Hit
     {
         public Guid GameId { get; set; }
     }
 
-    public class Missed : Message
+    public class Missed
     {
         public Guid GameId { get; set; } 
     }

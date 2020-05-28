@@ -8,19 +8,24 @@ namespace ExactlyOnce.AzureFunctions
     {
         ResponseCollectorContext context;
 
-        public ResponseCollector(ResponseCollectorContext context)
+        internal ResponseCollector(ResponseCollectorContext context)
         {
             this.context = context;
         }
 
         public Task AddAsync(T message, CancellationToken cancellationToken = new CancellationToken())
         {
-            throw new System.NotImplementedException();
+            var (headers, _) = MessageSerializer.FromJson(context.ResolvedAttribute.InputMessage);
+            var inputMessageId = headers[Headers.MessageId];
+            
+            var responseId = inputMessageId.ToGuid();
+
+            return context.Sender.Publish(responseId, message);
         }
 
         public Task FlushAsync(CancellationToken cancellationToken = new CancellationToken())
         {
-            throw new System.NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 }

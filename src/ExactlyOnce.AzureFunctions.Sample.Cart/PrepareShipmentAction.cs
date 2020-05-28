@@ -8,12 +8,12 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
         [FunctionName("PrepareShipmentAction")]
         public static void Run(
             [QueueTrigger("prepare-shipment")]PrepareShipment command, 
-            [ExactlyOnceResponse] IAsyncCollector<Message> collector,
+            [ExactlyOnceResponse] IAsyncCollector<PrepareShipmentResponse> collector,
             ILogger log)
         {
-            log.LogInformation($"Prepare shipment processed: {command.Id}");
+            log.LogInformation($"Prepare shipment processed: {command.OrderId}");
 
-            collector.AddAsync(new PrepareShipmentResponse());
+            collector.AddAsync(new PrepareShipmentResponse{OrderId = command.OrderId});
         }
     }
 }

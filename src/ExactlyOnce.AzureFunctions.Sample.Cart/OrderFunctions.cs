@@ -26,8 +26,11 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             
             var orderId = data?.orderId;
 
-            var envelope = Serializer.TextSerialize(
-                    new PlaceOrder {Id = Guid.NewGuid(), OrderId = orderId}, new Dictionary<string, string>());
+            //TODO: this is waaaay to mouthful
+            var envelope = MessageSerializer.ToJson(
+                Guid.NewGuid(),
+                    new Dictionary<string, string>(),
+                    new PlaceOrder {OrderId = orderId});
 
             queueCollector.Add(envelope);
 
@@ -47,8 +50,10 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             
             var orderId = data?.orderId;
 
-            var envelope = Serializer.TextSerialize(
-                new ApproveOrder { Id = Guid.NewGuid(), OrderId = orderId}, new Dictionary<string, string>());
+            var envelope = MessageSerializer.ToJson(
+                Guid.NewGuid(), 
+                new Dictionary<string, string>(),
+                new ApproveOrder { OrderId = orderId});
 
             queueCollector.Add(envelope);
 

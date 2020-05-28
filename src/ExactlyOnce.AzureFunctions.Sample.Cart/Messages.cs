@@ -1,21 +1,24 @@
-﻿namespace ExactlyOnce.AzureFunctions.Sample.Cart
+﻿using System;
+
+namespace ExactlyOnce.AzureFunctions.Sample.Cart
 {
-    public class PlaceOrder : Message
+    public class PlaceOrder
     {
         public string OrderId { get; set; }
     }
 
-    public class ApproveOrder : Message
+    public class ApproveOrder
     {
         public string OrderId { get; set; }
     }
 
-    public class PrepareShipment : Message
+    public class PrepareShipment
     {
+        public string OrderId { get; set; }
     }
 
-    public class PrepareShipmentResponse : Message
+    public class PrepareShipmentResponse
     {
-
+        public string OrderId { get; set; }
     }
 }

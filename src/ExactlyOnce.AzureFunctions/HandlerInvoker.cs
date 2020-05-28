@@ -11,22 +11,22 @@ namespace ExactlyOnce.AzureFunctions
             this.handlersMap = handlersMap;
         }
 
-        public HandlerDescriptor GetHandler(Message message)
+        public HandlerDescriptor GetHandler(object message)
         {
             return handlersMap.ForMessage(message.GetType());
         }
 
-        public Message[] Process(Message message, HandlerDescriptor handler, object state)
+        public object[] Process(Guid messageId, object message, HandlerDescriptor handler, object state)
         {
-            var outputMessages = InvokeHandler(handler.HandlerType, message, state);
+            var outputMessages = InvokeHandler(messageId, handler.HandlerType, message, state);
 
             return outputMessages.ToArray();
         }
 
-        static List<Message> InvokeHandler(Type handlerType, Message message, object state)
+        static List<object> InvokeHandler(Guid messageId, Type handlerType, object message, object state)
         {
             var handler = Activator.CreateInstance(handlerType);
-            var handlerContext = new HandlerContext(message.Id);
+            var handlerContext = new HandlerContext(messageId);
 
             var dataPropertyName = nameof(Manages<object>.Data);
             var dataProperty = handlerType.GetProperty(dataPropertyName);

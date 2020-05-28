@@ -5,6 +5,6 @@ namespace ExactlyOnce.AzureFunctions
 {
     interface IExactlyOnce
     {
-        Task Process(Guid businessId, Type stateType, Message message, Func<Message, object, Message[]> handle, Func<Message[], Task> publish);
+        Task Process(Guid messageId, Guid stateId, Type stateType, object message, Func<object, object, object[]> handle, Func<Guid, object, Task> publish);
     }
 }

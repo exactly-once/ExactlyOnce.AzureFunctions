@@ -15,21 +15,22 @@ namespace ExactlyOnce.AzureFunctions
             this.stateStore = stateStore;
         }
 
-        public async Task Process(Guid businessId, Type stateType, Message message, Func<Message, object, Message[]> handle, Func<Message[], Task> publish)
+        public async Task Process(Guid messageId, Guid stateId, Type stateType, object message, Func<object, object, object[]> handle, Func<Guid, object, Task> publish)
         {
-            var (state, stream, duplicate) = await stateStore.LoadState(stateType, businessId, message.Id);
+            var (state, stream, duplicate) = await stateStore.LoadState(stateType, stateId, messageId);
 
             logger.LogInformation(
-                $"Message:[type={message.GetType().Name}:id={message.Id.ToString("N").Substring(0, 4)}:dup={duplicate}]");
+                $"Message:[type={message.GetType().Name}:id={messageId.ToString("N").Substring(0, 4)}:dup={duplicate}]");
 
             var outputMessages = handle(message, state);
 
             if (duplicate == false)
             {
-                await stateStore.SaveState(stream, state, message.Id);
+                await stateStore.SaveState(stream, state, messageId);
             }
-           
-            await publish(outputMessages);
+
+            throw new NotImplementedException("We need to preserve output message id");
+            //await publish(outputMessages);
         }
     }
 }

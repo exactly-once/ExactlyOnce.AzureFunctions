@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ExactlyOnce.AzureFunctions.CosmosDb
@@ -14,17 +15,17 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
             this.stateStore = stateStore;
         }
 
-        public async Task Process(Guid businessId, Type stateType, Message message,
-            Func<Message, object, Message[]> handle, Func<Message[], Task> publish)
+        public async Task Process(Guid messageId, Guid stateId, Type stateType, object message,
+            Func<object, object, object[]> handle, Func<Guid, object, Task> publish)
         {
-            var state = await LoadState(businessId, stateType);
+            var state = await LoadState(stateId, stateType);
 
             if (state.Item.TransactionId != null)
             {
                 await FinishTransaction(state);
             }
 
-            var outboxState = await outbox.Get(message.Id);
+            var outboxState = await outbox.Get(messageId);
 
             if (outboxState == null)
             {
@@ -35,8 +36,10 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
                 outboxState = new CosmosDbOutboxState
                 {
                     Id = state.Item.TransactionId.ToString(),
-                    MessageId = message.Id.ToString(),
-                    OutputMessages = outputMessages
+                    MessageId = messageId.ToString(),
+                    OutputMessages = outputMessages,
+                    OutputMessagesIds = Enumerable.Range(0, outputMessages.Length)
+                        .Select(_ => Guid.NewGuid()).ToArray()
                 };
 
                 await outbox.Store(outboxState);
@@ -45,8 +48,14 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
                 await FinishTransaction(state);
             }
-            
-            await publish(outboxState.OutputMessages);
+
+            for (var i = 0; i < outboxState.OutputMessages.Length; i++)
+            {
+                var outputMessageId = outboxState.OutputMessagesIds[i];
+                var outputMessage = outboxState.OutputMessages[i];
+
+                await publish(outputMessageId, outputMessage);
+            }
         }
 
         async Task FinishTransaction(CosmosDbE1Item state)

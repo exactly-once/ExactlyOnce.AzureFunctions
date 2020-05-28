@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions.CosmosDb
 {
@@ -10,7 +11,10 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
         public string MessageId { get; set; }
 
         [JsonIgnore]
-        public Message[] OutputMessages { get; set; }
+        public object[] OutputMessages { get; set; }
+
+        [JsonIgnore]
+        public Guid[] OutputMessagesIds { get; set; }
 
         public string[] OutputMessagesText { get; set; }
     }
