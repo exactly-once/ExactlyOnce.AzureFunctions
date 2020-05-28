@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ExactlyOnce.AzureFunctions
 {
@@ -20,13 +21,11 @@ namespace ExactlyOnce.AzureFunctions
         {
             headers.Add(MessageTypeName, message.GetType().AssemblyQualifiedName);
 
-            var envelope = new Envelope
-            {
-                Headers = headers,
-                Content = JsonSerializer.Serialize(message, message.GetType())
-            };
+            var jsonObject = JObject.FromObject(message);
+            jsonObject.Add("headers", JObject.FromObject(headers));
 
-            var text = JsonSerializer.Serialize(envelope);
+            var text = jsonObject.ToString();
+
             return text;
         }
 
@@ -39,12 +38,13 @@ namespace ExactlyOnce.AzureFunctions
 
         public static (Dictionary<string, string>, object) TextDeserialize(string text)
         {
-            var envelope = JsonSerializer.Deserialize<Envelope>(text);
+            var jsonObject = JObject.Parse(text);
+            var headers = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonObject["headers"].ToString());
 
-            var messageType = envelope.Headers[Serializer.MessageTypeName];
-            var message = JsonSerializer.Deserialize(envelope.Content, Type.GetType(messageType));
+            var messageType = headers[Serializer.MessageTypeName];
+            var message = JsonSerializer.Deserialize(text, Type.GetType(messageType));
 
-            return (envelope.Headers, message);
+            return (headers, message);
         }
     }
 }

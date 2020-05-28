@@ -7,6 +7,6 @@ namespace ExactlyOnce.AzureFunctions
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue)]
     public class ExactlyOnceResponseAttribute : Attribute
     {
-        [AutoResolve] public string MessageContent { get; set; } = "{Content}";
+        [AutoResolve] public string Headers { get; set; } = "{QueueTrigger}";
     }
 }
