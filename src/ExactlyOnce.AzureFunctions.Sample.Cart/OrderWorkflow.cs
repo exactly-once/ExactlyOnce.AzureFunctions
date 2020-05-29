@@ -23,7 +23,7 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
         {
             Data.PlacedAt = DateTime.Now;
 
-            context.Publish(new PrepareShipment
+            context.Send(new PrepareShipment
             {
                 OrderId = message.OrderId
             });

@@ -9,14 +9,14 @@ namespace ExactlyOnce.AzureFunctions.Sample
         {
             if (Data.TargetPosition == command.Position)
             {
-                context.Publish(new Hit
+                context.Send(new Hit
                 {
                     GameId = command.GameId
                 });
             }
             else
             {
-                context.Publish(new Missed
+                context.Send(new Missed
                 {
                     GameId = command.GameId
                 });
