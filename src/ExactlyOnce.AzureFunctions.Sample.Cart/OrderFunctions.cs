@@ -26,13 +26,7 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             
             var orderId = data?.orderId;
 
-            //TODO: this is waaaay to mouthful
-            var envelope = MessageSerializer.ToJson(
-                Guid.NewGuid(),
-                    new Dictionary<string, string>(),
-                    new PlaceOrder {OrderId = orderId});
-
-            queueCollector.Add(envelope);
+            queueCollector.Add(new PlaceOrder {OrderId = orderId}.ToJson());
 
             return new CreatedResult($"Order {orderId} created", orderId);
         }
@@ -50,12 +44,7 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             
             var orderId = data?.orderId;
 
-            var envelope = MessageSerializer.ToJson(
-                Guid.NewGuid(), 
-                new Dictionary<string, string>(),
-                new ApproveOrder { OrderId = orderId});
-
-            queueCollector.Add(envelope);
+            queueCollector.Add(new ApproveOrder{OrderId = orderId}.ToJson());
 
             return new CreatedResult($"Order {orderId} created", orderId);
         }
