@@ -121,6 +121,7 @@ namespace ExactlyOnce.AzureFunctions.Tests
                 envelope.Message,
                 new Dictionary<string, string>
                 {
+                    {Headers.AuditOn, "true"},
                     {Headers.ConversationId, conversationId.ToString()}
                 });
 

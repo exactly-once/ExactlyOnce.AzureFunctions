@@ -25,7 +25,16 @@ namespace ExactlyOnce.AzureFunctions
             var (headers, message) = MessageSerializer.FromBytes(queueItem.AsBytes);
             
             var messageId = Guid.Parse(headers[Headers.MessageId]);
-            var conversationId = MakeSureConversationIsTracked(messageId, headers);
+
+            var outputHeaders = new Dictionary<string, string>();
+
+            if (headers.ContainsKey(Headers.AuditOn))
+            {
+                var conversationId = MakeSureConversationIsTracked(messageId, headers);
+
+                outputHeaders.Add(Headers.ConversationId, conversationId);
+                outputHeaders.Add(Headers.AuditOn, "true");
+            }
 
             var handler = handlerInvoker.GetHandler(message);
             var businessId = handler.GetBusinessId(message);
@@ -34,11 +43,6 @@ namespace ExactlyOnce.AzureFunctions
 
             async Task Publish(Guid outputMessageId, object outputMessage)
             {
-                var outputHeaders = new Dictionary<string, string>
-                {
-                    {Headers.ConversationId, conversationId}
-                };
-
                 await sender.Publish(outputMessageId, outputMessage, outputHeaders);
 
                 outputMessageIds.Add(outputMessageId);
@@ -51,8 +55,12 @@ namespace ExactlyOnce.AzureFunctions
 
             await exactlyOnce.Process(messageId, businessId, handler.DataType, message, Handle, Publish);
 
-            await auditSender.Publish(conversationId, messageId, outputMessageIds.ToArray());
+            if (headers.ContainsKey(Headers.AuditOn))
+            {
+                var conversationId = headers[Headers.ConversationId];
 
+                await auditSender.Publish(conversationId, messageId, outputMessageIds.ToArray());
+            }
         }
 
         string MakeSureConversationIsTracked(Guid messageId, Dictionary<string, string> headers)
