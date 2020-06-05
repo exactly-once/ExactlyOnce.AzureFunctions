@@ -22,7 +22,15 @@ namespace ExactlyOnce.AzureFunctions.Tests
         [SetUp]
         public void SetUp()
         {
-            sender = ExactlyOnceHostingExtensions.CreateMessageSender();
+            var destination = "test";
+            var routes = new MessageRoutes();
+            routes.Routes.Add(typeof(Hit), destination);
+            routes.Routes.Add(typeof(StartNewRound), destination);
+            routes.Routes.Add(typeof(FireAt), destination);
+            routes.Routes.Add(typeof(Missed), destination);
+
+
+            sender = ExactlyOnceHostingExtensions.CreateMessageSender("test");
 
             store = new CosmosDbStateStore();
             store.Initialize();

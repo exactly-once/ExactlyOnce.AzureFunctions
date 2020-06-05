@@ -8,7 +8,7 @@ namespace ExactlyOnce.AzureFunctions.Console
     {
         static async Task Main(string[] args)
         {
-            var sender = ExactlyOnceHostingExtensions.CreateMessageSender();
+            var sender = ExactlyOnceHostingExtensions.CreateMessageSender("test");
 
             var i = 0;
             while (true)

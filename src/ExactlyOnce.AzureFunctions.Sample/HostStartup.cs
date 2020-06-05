@@ -13,7 +13,15 @@ namespace ExactlyOnce.AzureFunctions.Sample
             {
                 c.AddHandler<ShootingRange>();
                 c.AddHandler<LeaderBoard>();
+
+                c.AddMessageRoute<Hit>(Destinations.Workflow);
+                c.AddMessageRoute<Missed>(Destinations.Workflow);
             });
         }
+    }
+
+    public class Destinations
+    {
+        public const string Workflow = "test";
     }
 }

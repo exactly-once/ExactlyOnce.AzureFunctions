@@ -23,11 +23,17 @@ namespace ExactlyOnce.AzureFunctions
 
         static ExactlyOnceConfiguration RegisterServices(this IServiceCollection services)
         {
+            var handlerMap = new HandlersMap();
+            var messageRoutes = new MessageRoutes();
+
+            services.AddSingleton(p => handlerMap);
+            services.AddSingleton(p => messageRoutes);
+
             services.AddLogging();
        
             services.AddSingleton(p => CreateStateStore());
             services.AddScoped<HandlerInvoker>();
-            services.AddSingleton(p => CreateMessageSender());
+            services.AddSingleton(p => CreateMessageSender(messageRoutes));
             services.AddSingleton(p => CreateAuditSender());
             services.AddScoped<MessageProcessor>();
 
@@ -48,11 +54,7 @@ namespace ExactlyOnce.AzureFunctions
                 return instance;
             });
 
-            var handlerMap = new HandlersMap();
-
-            services.AddSingleton(p => handlerMap);
-
-            return new ExactlyOnceConfiguration(handlerMap);
+            return new ExactlyOnceConfiguration(handlerMap, messageRoutes);
         }
 
         internal static StateStore CreateStateStore()
@@ -70,14 +72,16 @@ namespace ExactlyOnce.AzureFunctions
         }
 
         internal static AuditSender CreateAuditSender() => new AuditSender(GetQueue("audit"));
-        
-        internal static MessageSender CreateMessageSender(string queueName = "test") => new MessageSender(messageType =>
+
+        internal static MessageSender CreateMessageSender(MessageRoutes routes)
         {
-            //TODO: this is hacking and we need proper routing here
-            return messageType.Name == "PrepareShipment" 
-                ? GetQueue("prepare-shipment")
-                : GetQueue(queueName);
-        });
+            return new MessageSender(messageType => GetQueue(routes.Routes[messageType]));
+        }
+
+        internal static MessageSender CreateMessageSender(string destination)
+        {
+            return new MessageSender(messageType => GetQueue(destination));
+        }
 
         internal static CloudQueue GetQueue(string queueName)
         {
@@ -94,15 +98,24 @@ namespace ExactlyOnce.AzureFunctions
     public class ExactlyOnceConfiguration
     {
         HandlersMap handlersMap;
+        MessageRoutes messageRoutes;
 
-        internal ExactlyOnceConfiguration(HandlersMap handlersMap)
+        internal ExactlyOnceConfiguration(HandlersMap handlersMap, MessageRoutes messageRoutes)
         {
             this.handlersMap = handlersMap;
+            this.messageRoutes = messageRoutes;
         }
 
         public ExactlyOnceConfiguration AddHandler<THandler>()
         {
             handlersMap.AddHandler<THandler>();
+
+            return this;
+        }
+
+        public ExactlyOnceConfiguration AddMessageRoute<T>(string destination)
+        {
+            messageRoutes.Routes.Add(typeof(T), destination);
 
             return this;
         }

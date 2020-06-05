@@ -13,7 +13,14 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             builder.AddExactlyOnce(c =>
             {
                 c.AddHandler<OrderWorkflow>();
+
+                c.AddMessageRoute<PrepareShipment>(Destinations.PrepareShipment);
             });
         }
+    }
+
+    public class Destinations
+    {
+        public const string PrepareShipment = "prepare-shipment";
     }
 }
