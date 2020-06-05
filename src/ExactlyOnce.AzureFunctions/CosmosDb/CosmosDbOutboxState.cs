@@ -17,5 +17,8 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
         public Guid[] OutputMessagesIds { get; set; }
 
         public string[] OutputMessagesText { get; set; }
+
+        [JsonProperty(PropertyName = "ttl", NullValueHandling = NullValueHandling.Ignore)]
+        public int? TimeToLiveSeconds { get; set; }
     }
 }

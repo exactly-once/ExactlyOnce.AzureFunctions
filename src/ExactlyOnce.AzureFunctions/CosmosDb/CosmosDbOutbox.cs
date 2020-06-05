@@ -29,7 +29,11 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
             database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
 
-            container = await database.CreateContainerIfNotExistsAsync(containerId, partitionKeyPath);
+            container = await database.CreateContainerIfNotExistsAsync(new ContainerProperties{
+                Id = containerId, 
+                PartitionKeyPath = partitionKeyPath,
+                DefaultTimeToLive = -1
+            });
         }
 
         public async Task<CosmosDbOutboxState> Get(Guid id)
@@ -79,6 +83,7 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
             var state = await Get(transactionId);
             
             state.Id = state.MessageId;
+            state.TimeToLiveSeconds = (int)TimeSpan.FromSeconds(100).TotalSeconds;
 
             var batch = container.CreateTransactionalBatch(PartitionKey.None)
                 .DeleteItem(transactionId.ToString())
