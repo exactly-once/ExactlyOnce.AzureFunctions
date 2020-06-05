@@ -1,4 +1,5 @@
 ﻿using ExactlyOnce.AzureFunctions.Sample.Cart;
+using ExactlyOnce.AzureFunctions;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Hosting;
 
@@ -9,10 +10,10 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
     {
         public void Configure(IWebJobsBuilder builder)
         {
-            builder.AddExtension<ExactlyOnceExtensions>();
-
-            builder.Services.AddExactlyOnce()
-                .AddHandler<OrderWorkflow>();
+            builder.AddExactlyOnce(c =>
+            {
+                c.AddHandler<OrderWorkflow>();
+            });
         }
     }
 }

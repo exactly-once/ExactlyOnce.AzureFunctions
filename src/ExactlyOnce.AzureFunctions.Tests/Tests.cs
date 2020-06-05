@@ -22,12 +22,12 @@ namespace ExactlyOnce.AzureFunctions.Tests
         [SetUp]
         public void SetUp()
         {
-            sender = ExactlyOnceServiceCollectionExtensions.CreateMessageSender();
+            sender = ExactlyOnceHostingExtensions.CreateMessageSender();
 
             store = new CosmosDbStateStore();
             store.Initialize();
 
-            var auditQueue = ExactlyOnceServiceCollectionExtensions.GetQueue("audit");
+            var auditQueue = ExactlyOnceHostingExtensions.GetQueue("audit");
             receiver = new MessageReceiver(auditQueue);
 
             receiver.Start();

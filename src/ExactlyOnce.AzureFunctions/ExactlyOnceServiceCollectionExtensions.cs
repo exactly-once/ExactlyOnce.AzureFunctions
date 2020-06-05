@@ -1,13 +1,27 @@
-﻿using ExactlyOnce.AzureFunctions.CosmosDb;
+﻿using System;
+using ExactlyOnce.AzureFunctions.CosmosDb;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.Storage.Queue;
+using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ExactlyOnce.AzureFunctions
 {
-    public static class ExactlyOnceServiceCollectionExtensions
+    public static class ExactlyOnceHostingExtensions
     {
-        public static ExactlyOnceConfiguration AddExactlyOnce(this IServiceCollection services)
+        public static IWebJobsBuilder AddExactlyOnce(this IWebJobsBuilder builder,
+            Action<ExactlyOnceConfiguration> configure)
+        {
+            builder.AddExtension<ExactlyOnceExtensions>();
+
+            var configuration = builder.Services.RegisterServices();
+
+            configure(configuration);
+
+            return builder;
+        }
+
+        static ExactlyOnceConfiguration RegisterServices(this IServiceCollection services)
         {
             services.AddLogging();
        

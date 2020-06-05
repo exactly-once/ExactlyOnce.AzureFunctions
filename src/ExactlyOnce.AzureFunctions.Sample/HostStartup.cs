@@ -9,9 +9,11 @@ namespace ExactlyOnce.AzureFunctions.Sample
     {
         public void Configure(IWebJobsBuilder builder)
         {
-            builder.Services.AddExactlyOnce()
-                .AddHandler<ShootingRange>()
-                .AddHandler<LeaderBoard>();
+            builder.AddExactlyOnce(c =>
+            {
+                c.AddHandler<ShootingRange>();
+                c.AddHandler<LeaderBoard>();
+            });
         }
     }
 }

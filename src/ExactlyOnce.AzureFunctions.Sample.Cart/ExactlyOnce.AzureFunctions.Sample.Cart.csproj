@@ -4,9 +4,12 @@
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ExactlyOnce.AzureFunctions" Version="1.0.0-alpha-1" />
+    <!--PackageReference Include="ExactlyOnce.AzureFunctions" Version="1.0.0-alpha-2" /-->
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.10" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ExactlyOnce.AzureFunctions\ExactlyOnce.AzureFunctions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

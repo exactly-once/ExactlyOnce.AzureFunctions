@@ -26,7 +26,7 @@ namespace ExactlyOnce.AzureFunctions
             rule.BindToCollector<ResponseCollectorOpenType>(typeof(ResponseCollectorConverter<>), this);
 
             var mainQueueName = configuration["ExactlyOnceInputQueue"];
-            messageSender = ExactlyOnceServiceCollectionExtensions.CreateMessageSender(mainQueueName);
+            messageSender = ExactlyOnceHostingExtensions.CreateMessageSender(mainQueueName);
         }
  
         class ResponseCollectorOpenType : OpenType.Poco
