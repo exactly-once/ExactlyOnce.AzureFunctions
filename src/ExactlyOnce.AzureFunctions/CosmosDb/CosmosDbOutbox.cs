@@ -77,10 +77,19 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
         public async Task Commit(Guid transactionId)
         {
             var state = await Get(transactionId);
-
+            
             state.Id = state.MessageId;
 
-            await Store(state);
+            var batch = container.CreateTransactionalBatch(PartitionKey.None)
+                .DeleteItem(transactionId.ToString())
+                .UpsertItem(state);
+
+            var result = await batch.ExecuteAsync();
+
+            if (result.IsSuccessStatusCode == false)
+            {
+                throw new Exception(result.ErrorMessage);
+            }
         }
 
         public async Task Store(CosmosDbOutboxState outboxState)
