@@ -26,7 +26,7 @@ namespace ExactlyOnce.AzureFunctions
         static List<object> InvokeHandler(Guid messageId, Type handlerType, object message, object state)
         {
             var handler = Activator.CreateInstance(handlerType);
-            var handlerContext = new HandlerContext(messageId);
+            var handlerContext = new HandlerContext();
 
             var dataPropertyName = nameof(Manages<object>.Data);
             var dataProperty = handlerType.GetProperty(dataPropertyName);

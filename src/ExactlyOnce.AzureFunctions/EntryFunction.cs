@@ -7,9 +7,9 @@ namespace ExactlyOnce.AzureFunctions
 {
     class EntryFunction
     {
-        MessageProcessor messageProcessor;
+        IMessageProcessor messageProcessor;
 
-        public EntryFunction(MessageProcessor messageProcessor)
+        public EntryFunction(IMessageProcessor messageProcessor)
         {
             this.messageProcessor = messageProcessor;
         }

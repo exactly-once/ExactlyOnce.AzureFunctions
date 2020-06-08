@@ -9,13 +9,13 @@ namespace ExactlyOnce.AzureFunctions.Sample
         public Guid Map(Missed m) => m.GameId;
 
 
-        public void Handle(IHandlerContext context, Hit @event)
+        public void Handle(HandlerContext context, Hit @event)
         {
             Console.WriteLine($"##########: Hit saved {@event.GameId}");
             Data.NumberOfHits++;
         }
 
-        public void Handle(IHandlerContext context, Missed @event)
+        public void Handle(HandlerContext context, Missed @event)
         {
             Data.NumberOfMisses++;
         }

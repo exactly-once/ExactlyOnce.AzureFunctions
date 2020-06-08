@@ -1,5 +1,4 @@
 ﻿using System;
-using ExactlyOnce.AzureFunctions.Sample;
 using NUnit.Framework;
 
 namespace ExactlyOnce.AzureFunctions.Tests
@@ -36,7 +35,7 @@ namespace ExactlyOnce.AzureFunctions.Tests
                 throw new NotImplementedException();
             }
 
-            public void Handle(IHandlerContext context, SampleMessage message)
+            public void Handle(HandlerContext context, SampleMessage message)
             {
                 throw new NotImplementedException();
             }

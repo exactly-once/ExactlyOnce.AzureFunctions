@@ -5,7 +5,7 @@ using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace ExactlyOnce.AzureFunctions
 {
-    class MessageProcessor
+    class MessageProcessor : IMessageProcessor
     {
         HandlerInvoker handlerInvoker;
         MessageSender sender;

@@ -2,11 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.0-alpha-3</Version>
+    <Version>1.0.0-alpha-9</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>8</LangVersion>
     <AssemblyName>ExactlyOnce.AzureFunctions</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <_PackageFiles Include="..\ExactlyOnce.AzureFunctions\EntryFunction.cs">
+      <BuildAction>Compile</BuildAction>
+      <PackagePath>content\App_Packages\;contentFiles\cs\any\</PackagePath>
+    </_PackageFiles>
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\ExactlyOnce.AzureFunctions\AuditSender.cs" Link="AuditSender.cs" />
@@ -16,7 +23,6 @@
     <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\CosmosDbOutbox.cs" Link="CosmosDbOutbox.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\CosmosDbOutboxState.cs" Link="CosmosDbOutboxState.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\CosmosDbStateStore.cs" Link="CosmosDbStateStore.cs" />
-    <Compile Include="..\ExactlyOnce.AzureFunctions\EntryFunction.cs" Link="EntryFunction.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ExactlyOnceExtensions.cs" Link="ExactlyOnceExtensions.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ExactlyOnceResponse.cs" Link="ExactlyOnceResponse.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ExactlyOnceServiceCollectionExtensions.cs" Link="ExactlyOnceServiceCollectionExtensions.cs" />
@@ -28,6 +34,7 @@
     <Compile Include="..\ExactlyOnce.AzureFunctions\HelperExtensions.cs" Link="HelperExtensions.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\IExactlyOnce.cs" Link="IExactlyOnce.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\IHandler.cs" Link="IHandler.cs" />
+    <Compile Include="..\ExactlyOnce.AzureFunctions\IMessageProcessor.cs" Link="IMessageProcessor.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\InternalsVisibleTo.cs" Link="InternalsVisibleTo.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\Manages.cs" Link="Manages.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\MessageProcessor.cs" Link="MessageProcessor.cs" />
@@ -42,21 +49,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\ExactlyOnce.AzureFunctions\bin\Debug\netcoreapp3.0\EntryFunction\function.json" Link="EntryFunction\function.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.0.0" />
     <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.1.3" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.10" />
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.16" />
-    <PackageReference Include="Streamstone" Version="2.3.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.8.0" />
     <PackageReference Include="System.Text.Json" Version="4.7.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="EntryFunction\" />
   </ItemGroup>
 
 </Project>

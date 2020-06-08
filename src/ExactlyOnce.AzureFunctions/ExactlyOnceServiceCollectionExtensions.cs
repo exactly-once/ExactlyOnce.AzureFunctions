@@ -58,7 +58,15 @@ namespace ExactlyOnce.AzureFunctions
             services.AddScoped<HandlerInvoker>();
             services.AddSingleton<MessageSender>();
             services.AddSingleton<AuditSender>();
-            services.AddScoped<MessageProcessor>();
+            services.AddScoped<IMessageProcessor>(sp =>
+            {
+                var exactlyOnce = sp.GetRequiredService<IExactlyOnce>();
+                var handlerInvoker = sp.GetRequiredService<HandlerInvoker>();
+                var messageSender = sp.GetRequiredService<MessageSender>();
+                var auditSender = sp.GetRequiredService<AuditSender>();
+
+                return new MessageProcessor(exactlyOnce, handlerInvoker, messageSender, auditSender);
+            });
 
             services.AddSingleton<CosmosDbOutbox>();
             services.AddSingleton<CosmosDbStateStore>();

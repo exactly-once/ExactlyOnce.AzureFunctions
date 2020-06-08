@@ -5,7 +5,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     class ShootingRange : Manages<ShootingRange.ShootingRangeData>, IHandler<FireAt>, IHandler<StartNewRound>
     {
-        public void Handle(IHandlerContext context, FireAt command)
+        public void Handle(HandlerContext context, FireAt command)
         {
             if (Data.TargetPosition == command.Position)
             {
@@ -25,7 +25,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
             Data.NumberOfAttempts++;
         }
 
-        public void Handle(IHandlerContext context, StartNewRound command)
+        public void Handle(HandlerContext context, StartNewRound command)
         {
             Data.NumberOfAttempts = 0;
             Data.TargetPosition = command.Position;

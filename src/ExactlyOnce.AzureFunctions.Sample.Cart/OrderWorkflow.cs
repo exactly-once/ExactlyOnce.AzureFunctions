@@ -19,7 +19,7 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
 
         public Guid Map(PrepareShipmentResponse m) => m.OrderId.ToGuid();
 
-        public void Handle(IHandlerContext context, PlaceOrder message)
+        public void Handle(HandlerContext context, PlaceOrder message)
         {
             Data.PlacedAt = DateTime.Now;
 
@@ -29,12 +29,12 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             });
         }
 
-        public void Handle(IHandlerContext context, ApproveOrder message)
+        public void Handle(HandlerContext context, ApproveOrder message)
         {
             Data.ApprovedAt = DateTime.Now;
         }
 
-        public void Handle(IHandlerContext context, PrepareShipmentResponse message)
+        public void Handle(HandlerContext context, PrepareShipmentResponse message)
         {
             Data.ShipmentReady = true;
         }
