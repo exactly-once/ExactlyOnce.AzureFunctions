@@ -8,7 +8,13 @@ namespace ExactlyOnce.AzureFunctions.Console
     {
         static async Task Main(string[] args)
         {
-            var sender = ExactlyOnceHostingExtensions.CreateMessageSender("test");
+            var routing = new RoutingConfiguration
+            {
+                ConnectionString = "UseDevelopmentStorage=true;"
+            };
+            routing.AddMessageRoute<StartNewRound>("test");
+
+            var sender = new MessageSender(new QueueProvider(routing), routing);
 
             var i = 0;
             while (true)

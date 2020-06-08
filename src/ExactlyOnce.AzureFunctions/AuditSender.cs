@@ -8,11 +8,11 @@ namespace ExactlyOnce.AzureFunctions
 {
     class AuditSender
     {
-        CloudQueue auditQueue;
+        QueueProvider queueProvider;
 
-        public AuditSender(CloudQueue auditQueue)
+        public AuditSender(QueueProvider queueProvider)
         {
-            this.auditQueue = auditQueue;
+            this.queueProvider = queueProvider;
         }
 
         public Task Publish(string conversationId, Guid processedMessageId, Guid[] inflightMessageIds)
@@ -26,7 +26,7 @@ namespace ExactlyOnce.AzureFunctions
 
             var json = JsonSerializer.Serialize(content);
 
-            return auditQueue.AddMessageAsync(new CloudQueueMessage(json));
+            return queueProvider.GetQueue("audit").AddMessageAsync(new CloudQueueMessage(json));
         }
     }
 }

@@ -5,13 +5,15 @@ using Microsoft.Azure.Storage.Queue;
 
 namespace ExactlyOnce.AzureFunctions
 {
-    class MessageSender
+    public class MessageSender
     {
-        Func<Type, CloudQueue> mapMessageToQueue;
+        QueueProvider queueProvider;
+        RoutingConfiguration configuration;
 
-        public MessageSender(Func<Type, CloudQueue> mapMessageToQueue)
+        public MessageSender(QueueProvider queueProvider, RoutingConfiguration configuration)
         {
-            this.mapMessageToQueue = mapMessageToQueue;
+            this.queueProvider = queueProvider;
+            this.configuration = configuration;
         }
 
         public Task Publish(Guid messageId, object message, Dictionary<string, string> headers = null)
@@ -21,8 +23,17 @@ namespace ExactlyOnce.AzureFunctions
             var messageBytes = MessageSerializer.ToBytes(messageId, headers, message);
 
             var queueMessage = new CloudQueueMessage(messageBytes);
-                    
-            return mapMessageToQueue(message.GetType()).AddMessageAsync(queueMessage);
+
+            var destinationQueue = MapMessageToQueue(message.GetType());
+
+            return MapMessageToQueue(message.GetType()).AddMessageAsync(queueMessage);
+        }
+
+        CloudQueue MapMessageToQueue(Type type)
+        {
+            var queueName = configuration.Routes[type];
+
+            return queueProvider.GetQueue(queueName);
         }
     }
 }

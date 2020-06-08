@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Description;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Config;
@@ -12,11 +11,13 @@ namespace ExactlyOnce.AzureFunctions
     public class ExactlyOnceExtensions : IExtensionConfigProvider
     {
         IConfiguration configuration;
+        MessageSender sender;
         MessageSender messageSender;
 
-        public ExactlyOnceExtensions(IConfiguration configuration)
+        public ExactlyOnceExtensions(IConfiguration configuration, MessageSender sender)
         {
             this.configuration = configuration;
+            this.sender = sender;
         }
 
         public void Initialize(ExtensionConfigContext context)
@@ -25,8 +26,7 @@ namespace ExactlyOnce.AzureFunctions
  
             rule.BindToCollector<ResponseCollectorOpenType>(typeof(ResponseCollectorConverter<>), this);
 
-            var mainQueueName = configuration["ExactlyOnceInputQueue"];
-            messageSender = ExactlyOnceHostingExtensions.CreateMessageSender(mainQueueName);
+            messageSender = sender;
         }
  
         class ResponseCollectorOpenType : OpenType.Poco

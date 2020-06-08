@@ -31,13 +31,14 @@
     <Compile Include="..\ExactlyOnce.AzureFunctions\InternalsVisibleTo.cs" Link="InternalsVisibleTo.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\Manages.cs" Link="Manages.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\MessageProcessor.cs" Link="MessageProcessor.cs" />
-    <Compile Include="..\ExactlyOnce.AzureFunctions\MessageRoutes.cs" Link="MessageRoutes.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\MessageSender.cs" Link="MessageSender.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\MessageSerializer.cs" Link="MessageSerializer.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ObjectExtensions.cs" Link="ObjectExtensions.cs" />
+    <Compile Include="..\ExactlyOnce.AzureFunctions\OutboxConfiguration.cs" Link="OutboxConfiguration.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ResponseCollector.cs" Link="ResponseCollector.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ResponseCollectorContext.cs" Link="ResponseCollectorContext.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ResponseCollectorConverter.cs" Link="ResponseCollectorConverter.cs" />
+    <Compile Include="..\ExactlyOnce.AzureFunctions\RoutingConfiguration.cs" Link="RoutingConfiguration.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\StateBasedExactlyOnce.cs" Link="StateBasedExactlyOnce.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\StateStore.cs" Link="StateStore.cs" />
   </ItemGroup>

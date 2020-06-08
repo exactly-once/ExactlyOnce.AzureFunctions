@@ -22,20 +22,26 @@ namespace ExactlyOnce.AzureFunctions.Tests
         [SetUp]
         public void SetUp()
         {
+
             var destination = "test";
-            var routes = new MessageRoutes();
-            routes.Routes.Add(typeof(Hit), destination);
-            routes.Routes.Add(typeof(StartNewRound), destination);
-            routes.Routes.Add(typeof(FireAt), destination);
-            routes.Routes.Add(typeof(Missed), destination);
 
+            var routes = new RoutingConfiguration
+            {
+                ConnectionString = Environment.GetEnvironmentVariable("E1_StorageAccount_ConnectionString")
+            };
+            routes.AddMessageRoute<Hit>(destination);
+            routes.AddMessageRoute<StartNewRound>(destination);
+            routes.AddMessageRoute<FireAt>(destination);
+            routes.AddMessageRoute<Missed>(destination);
 
-            sender = ExactlyOnceHostingExtensions.CreateMessageSender("test");
+            var queueProvider = new QueueProvider(routes);
+
+            sender = new MessageSender(queueProvider, routes);
 
             store = new CosmosDbStateStore();
             store.Initialize();
 
-            var auditQueue = ExactlyOnceHostingExtensions.GetQueue("audit");
+            var auditQueue = queueProvider.GetQueue("audit");
             receiver = new MessageReceiver(auditQueue);
 
             receiver.Start();

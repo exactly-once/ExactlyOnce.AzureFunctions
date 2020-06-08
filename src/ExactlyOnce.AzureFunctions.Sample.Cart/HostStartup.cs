@@ -1,5 +1,4 @@
 ﻿using ExactlyOnce.AzureFunctions.Sample.Cart;
-using ExactlyOnce.AzureFunctions;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Hosting;
 
@@ -14,7 +13,10 @@ namespace ExactlyOnce.AzureFunctions.Sample.Cart
             {
                 c.AddHandler<OrderWorkflow>();
 
-                c.AddMessageRoute<PrepareShipment>(Destinations.PrepareShipment);
+                c.ConfigureRouting(r =>
+                {
+                    r.AddMessageRoute<PrepareShipment>(Destinations.PrepareShipment);
+                });
             });
         }
     }

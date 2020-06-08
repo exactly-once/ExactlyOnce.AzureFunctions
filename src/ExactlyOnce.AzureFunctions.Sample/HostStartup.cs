@@ -1,4 +1,5 @@
-﻿using ExactlyOnce.AzureFunctions.Sample;
+﻿using System;
+using ExactlyOnce.AzureFunctions.Sample;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Hosting;
 
@@ -14,8 +15,20 @@ namespace ExactlyOnce.AzureFunctions.Sample
                 c.AddHandler<ShootingRange>();
                 c.AddHandler<LeaderBoard>();
 
-                c.AddMessageRoute<Hit>(Destinations.Workflow);
-                c.AddMessageRoute<Missed>(Destinations.Workflow);
+                c.ConfigureRouting(r =>
+                {
+                    r.ConnectionString = Environment.GetEnvironmentVariable("E1_StorageAccount_ConnectionString");
+
+                    r.AddMessageRoute<Hit>(Destinations.Workflow);
+                    r.AddMessageRoute<Missed>(Destinations.Workflow);
+                });
+
+                c.ConfigureOutbox(o =>
+                {
+                    o.DatabaseId = "ExactlyOnce";
+                    o.EndpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri");
+                    o.PrimaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key");
+                });
             });
         }
     }

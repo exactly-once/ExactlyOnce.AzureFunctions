@@ -11,28 +11,27 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 {
     public class CosmosDbOutbox
     {
-        static readonly string EndpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri");
+        OutboxConfiguration configuration;
         
-        static readonly string PrimaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key");
-
         CosmosClient cosmosClient;
         Database database;
         Container container;
 
-        string databaseId = "ExactlyOnce";
-        string containerId = "Outbox";
-        string partitionKeyPath = "/Id";
+        public CosmosDbOutbox(OutboxConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
 
         public async Task Initialize()
         {
-            cosmosClient = new CosmosClient(EndpointUri, PrimaryKey);
+            cosmosClient = new CosmosClient(configuration.EndpointUri, configuration.PrimaryKey);
 
-            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
+            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId);
 
             container = await database.CreateContainerIfNotExistsAsync(new ContainerProperties{
-                Id = containerId, 
-                PartitionKeyPath = partitionKeyPath,
-                DefaultTimeToLive = -1
+                Id = configuration.ContainerId, 
+                PartitionKeyPath = "/Id",
+                DefaultTimeToLive = -1 //No expiration unless explicitly set on item level
             });
         }
 
