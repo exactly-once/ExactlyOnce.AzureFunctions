@@ -8,7 +8,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
         public Guid Map(Hit m) => m.GameId;
         public Guid Map(Missed m) => m.GameId;
 
-
         public void Handle(HandlerContext context, Hit @event)
         {
             Console.WriteLine($"##########: Hit saved {@event.GameId}");

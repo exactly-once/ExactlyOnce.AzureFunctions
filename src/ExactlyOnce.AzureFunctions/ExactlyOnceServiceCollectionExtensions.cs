@@ -1,33 +1,10 @@
 ﻿using System;
 using ExactlyOnce.AzureFunctions.CosmosDb;
-using Microsoft.Azure.Storage.Queue;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ExactlyOnce.AzureFunctions
 {
-    public class QueueProvider
-    {
-        RoutingConfiguration configuration;
-
-        public QueueProvider(RoutingConfiguration configuration)
-        {
-            this.configuration = configuration;
-        }
-
-        public CloudQueue GetQueue(string queueName)
-        {
-            var storageAccount = Microsoft.Azure.Storage.CloudStorageAccount.Parse(configuration.ConnectionString);
-            
-            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
-            CloudQueue queue = queueClient.GetQueueReference(queueName);
-
-            queue.CreateIfNotExists();
-
-            return queue;
-        }
-    }
-
     public static class ExactlyOnceHostingExtensions
     {
         public static IWebJobsBuilder AddExactlyOnce(this IWebJobsBuilder builder,
@@ -46,7 +23,7 @@ namespace ExactlyOnce.AzureFunctions
         {
             var handlerMap = new HandlersMap();
             var messageRoutes = new RoutingConfiguration();
-            var outboxConfiguration = new OutboxConfiguration();
+            var outboxConfiguration = new StorageConfiguration();
 
             services.AddSingleton<QueueProvider>();
             services.AddSingleton(p => handlerMap);
@@ -87,13 +64,13 @@ namespace ExactlyOnce.AzureFunctions
     {
         HandlersMap handlersMap;
         RoutingConfiguration routingConfiguration;
-        OutboxConfiguration outboxConfiguration;
+        StorageConfiguration storageConfiguration;
 
-        internal ExactlyOnceConfiguration(HandlersMap handlersMap, RoutingConfiguration routingConfiguration, OutboxConfiguration outboxConfiguration)
+        internal ExactlyOnceConfiguration(HandlersMap handlersMap, RoutingConfiguration routingConfiguration, StorageConfiguration storageConfiguration)
         {
             this.handlersMap = handlersMap;
             this.routingConfiguration = routingConfiguration;
-            this.outboxConfiguration = outboxConfiguration;
+            this.storageConfiguration = storageConfiguration;
         }
 
         public ExactlyOnceConfiguration AddHandler<THandler>()
@@ -110,9 +87,9 @@ namespace ExactlyOnce.AzureFunctions
             return this;
         }
 
-        public ExactlyOnceConfiguration ConfigureOutbox(Action<OutboxConfiguration> configure)
+        public ExactlyOnceConfiguration ConfigureOutbox(Action<StorageConfiguration> configure)
         {
-            configure(outboxConfiguration);
+            configure(storageConfiguration);
 
             return this;
         }

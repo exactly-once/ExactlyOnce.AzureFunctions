@@ -11,13 +11,13 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 {
     public class CosmosDbOutbox
     {
-        OutboxConfiguration configuration;
+        StorageConfiguration configuration;
         
         CosmosClient cosmosClient;
         Database database;
         Container container;
 
-        public CosmosDbOutbox(OutboxConfiguration configuration)
+        public CosmosDbOutbox(StorageConfiguration configuration)
         {
             this.configuration = configuration;
         }

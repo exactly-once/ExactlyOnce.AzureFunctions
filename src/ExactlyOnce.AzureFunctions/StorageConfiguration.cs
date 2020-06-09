@@ -1,6 +1,6 @@
 ﻿namespace ExactlyOnce.AzureFunctions
 {
-    public class OutboxConfiguration
+    public class StorageConfiguration
     {
         public string EndpointUri { get; set; }
         public string PrimaryKey { get; set; }

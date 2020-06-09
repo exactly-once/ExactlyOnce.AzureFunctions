@@ -9,20 +9,21 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 {
     public class CosmosDbStateStore
     {
-        static readonly string EndpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri");
+        StorageConfiguration configuration;
         
-        static readonly string PrimaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key");
-
         CosmosClient cosmosClient;
         Database database;
 
-        string databaseId = "ExactlyOnce";
+        public CosmosDbStateStore(StorageConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
 
         public async Task Initialize()
         {
-            cosmosClient = new CosmosClient(EndpointUri, PrimaryKey);
+            cosmosClient = new CosmosClient(configuration.EndpointUri, configuration.PrimaryKey);
 
-            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
+            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId);
         }
 
         public async Task<CosmosDbE1Item> Load(Guid itemId, Type stateType)

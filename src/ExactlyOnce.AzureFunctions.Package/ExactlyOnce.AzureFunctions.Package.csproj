@@ -41,7 +41,7 @@
     <Compile Include="..\ExactlyOnce.AzureFunctions\MessageSender.cs" Link="MessageSender.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\MessageSerializer.cs" Link="MessageSerializer.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ObjectExtensions.cs" Link="ObjectExtensions.cs" />
-    <Compile Include="..\ExactlyOnce.AzureFunctions\OutboxConfiguration.cs" Link="OutboxConfiguration.cs" />
+    <Compile Include="..\ExactlyOnce.AzureFunctions\StorageConfiguration.cs" Link="StorageConfiguration.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ResponseCollector.cs" Link="ResponseCollector.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ResponseCollectorContext.cs" Link="ResponseCollectorContext.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ResponseCollectorConverter.cs" Link="ResponseCollectorConverter.cs" />
