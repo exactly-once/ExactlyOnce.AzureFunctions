@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions.CosmosDb
@@ -10,17 +11,20 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
     public class CosmosDbStateStore
     {
         StorageConfiguration configuration;
-        
+        ILogger<CosmosDbStateStore> logger;
+
         CosmosClient cosmosClient;
         Database database;
 
-        public CosmosDbStateStore(StorageConfiguration configuration)
+        public CosmosDbStateStore(StorageConfiguration configuration, ILogger<CosmosDbStateStore> logger)
         {
             this.configuration = configuration;
+            this.logger = logger;
         }
 
         public async Task Initialize()
         {
+            logger.LogError($"databaseId={configuration.DatabaseId}");
             cosmosClient = new CosmosClient(configuration.EndpointUri, configuration.PrimaryKey);
 
             database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId);
@@ -31,7 +35,7 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
             Container container = await database
                 .DefineContainer(stateType.Name, "/id")
                 .CreateIfNotExistsAsync();
-                
+
             using var response = await container.ReadItemStreamAsync(itemId.ToString(), new PartitionKey(itemId.ToString()));
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -61,6 +65,8 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         public async Task Persist(CosmosDbE1Item item)
         {
+            logger.LogError($"storing state in databaseId={database.Id}");
+
             Container container = await database
                 .DefineContainer(item.Item.GetType().Name, "/id")
                 .CreateIfNotExistsAsync();

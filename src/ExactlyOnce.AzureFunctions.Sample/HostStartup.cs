@@ -25,7 +25,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
                 c.ConfigureOutbox(o =>
                 {
-                    o.DatabaseId = "ExactlyOnce";
+                    o.DatabaseId = "E1Sandbox";
                     o.EndpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri");
                     o.PrimaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key");
                 });
@@ -35,6 +35,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
     public class Destinations
     {
-        public const string Workflow = "test";
+        public const string Workflow = "e1queue";
     }
 }

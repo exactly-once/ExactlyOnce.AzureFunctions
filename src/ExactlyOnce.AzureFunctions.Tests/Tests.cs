@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using ExactlyOnce.AzureFunctions.CosmosDb;
 using ExactlyOnce.AzureFunctions.Sample;
 using Microsoft.Azure.Storage.Queue;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 
 namespace ExactlyOnce.AzureFunctions.Tests
@@ -23,7 +25,7 @@ namespace ExactlyOnce.AzureFunctions.Tests
         public void SetUp()
         {
 
-            var destination = "test";
+            var destination = "e1queue";
 
             var routes = new RoutingConfiguration
             {
@@ -38,7 +40,13 @@ namespace ExactlyOnce.AzureFunctions.Tests
 
             sender = new MessageSender(queueProvider, routes);
 
-            store = new CosmosDbStateStore();
+            store = new CosmosDbStateStore(new StorageConfiguration
+            {
+                DatabaseId = "E1Sandbox",
+                EndpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri"),
+                PrimaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key")
+            }, new Logger<CosmosDbStateStore>(new NullLoggerFactory()));
+
             store.Initialize();
 
             var auditQueue = queueProvider.GetQueue("audit");

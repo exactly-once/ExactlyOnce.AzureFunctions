@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ExactlyOnce.AzureFunctions.CosmosDb;
 using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace ExactlyOnce.AzureFunctions
@@ -10,14 +11,17 @@ namespace ExactlyOnce.AzureFunctions
         HandlerInvoker handlerInvoker;
         MessageSender sender;
         AuditSender auditSender;
+        InMemoryLockManager lockManager;
         IExactlyOnce exactlyOnce;
 
-        public MessageProcessor(IExactlyOnce exactlyOnce, HandlerInvoker handlerInvoker, MessageSender sender, AuditSender auditSender)
+        public MessageProcessor(IExactlyOnce exactlyOnce, HandlerInvoker handlerInvoker, 
+            MessageSender sender, AuditSender auditSender, InMemoryLockManager lockManager)
         {
             this.exactlyOnce = exactlyOnce;
             this.handlerInvoker = handlerInvoker;
             this.sender = sender;
             this.auditSender = auditSender;
+            this.lockManager = lockManager;
         }
 
         public async Task Process(CloudQueueMessage queueItem)
@@ -53,7 +57,18 @@ namespace ExactlyOnce.AzureFunctions
                 return handlerInvoker.Process(messageId, inputMessage, handler, state);
             }
 
-            await exactlyOnce.Process(messageId, businessId, handler.DataType, message, Handle, Publish);
+            var semaphore = lockManager.GetSemaphore(businessId);
+
+            try
+            {
+                await semaphore.WaitAsync();
+
+                await exactlyOnce.Process(messageId, businessId, handler.DataType, message, Handle, Publish);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
 
             if (headers.ContainsKey(Headers.AuditOn))
             {
