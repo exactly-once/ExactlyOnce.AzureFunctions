@@ -11,11 +11,11 @@ namespace ExactlyOnce.AzureFunctions
         HandlerInvoker handlerInvoker;
         MessageSender sender;
         AuditSender auditSender;
-        InMemoryLockManager lockManager;
+        LeaseManager lockManager;
         IExactlyOnce exactlyOnce;
 
         public MessageProcessor(IExactlyOnce exactlyOnce, HandlerInvoker handlerInvoker, 
-            MessageSender sender, AuditSender auditSender, InMemoryLockManager lockManager)
+            MessageSender sender, AuditSender auditSender, LeaseManager lockManager)
         {
             this.exactlyOnce = exactlyOnce;
             this.handlerInvoker = handlerInvoker;
@@ -57,17 +57,17 @@ namespace ExactlyOnce.AzureFunctions
                 return handlerInvoker.Process(messageId, inputMessage, handler, state);
             }
 
-            var semaphore = lockManager.GetSemaphore(businessId);
+            Lease lease = null;
 
             try
             {
-                await semaphore.WaitAsync();
+                lease = await lockManager.AcquireLease(businessId);
 
                 await exactlyOnce.Process(messageId, businessId, handler.DataType, message, Handle, Publish);
             }
             finally
             {
-                semaphore.Release();
+                lease?.Release();
             }
 
             if (headers.ContainsKey(Headers.AuditOn))

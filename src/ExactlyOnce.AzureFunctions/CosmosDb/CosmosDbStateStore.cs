@@ -11,20 +11,17 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
     public class CosmosDbStateStore
     {
         StorageConfiguration configuration;
-        ILogger<CosmosDbStateStore> logger;
 
         CosmosClient cosmosClient;
         Database database;
 
-        public CosmosDbStateStore(StorageConfiguration configuration, ILogger<CosmosDbStateStore> logger)
+        public CosmosDbStateStore(StorageConfiguration configuration)
         {
             this.configuration = configuration;
-            this.logger = logger;
         }
 
         public async Task Initialize()
         {
-            logger.LogError($"databaseId={configuration.DatabaseId}");
             cosmosClient = new CosmosClient(configuration.EndpointUri, configuration.PrimaryKey);
 
             database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId);
@@ -65,8 +62,6 @@ namespace ExactlyOnce.AzureFunctions.CosmosDb
 
         public async Task Persist(CosmosDbE1Item item)
         {
-            logger.LogError($"storing state in databaseId={database.Id}");
-
             Container container = await database
                 .DefineContainer(item.Item.GetType().Name, "/id")
                 .CreateIfNotExistsAsync();
