@@ -23,7 +23,6 @@
     <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\CosmosDbOutbox.cs" Link="CosmosDbOutbox.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\CosmosDbOutboxState.cs" Link="CosmosDbOutboxState.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\CosmosDbStateStore.cs" Link="CosmosDbStateStore.cs" />
-    <Compile Include="..\ExactlyOnce.AzureFunctions\CosmosDb\InMemoryLockManager.cs" Link="InMemoryLockManager.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ExactlyOnceExtensions.cs" Link="ExactlyOnceExtensions.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ExactlyOnceResponse.cs" Link="ExactlyOnceResponse.cs" />
     <Compile Include="..\ExactlyOnce.AzureFunctions\ExactlyOnceServiceCollectionExtensions.cs" Link="ExactlyOnceServiceCollectionExtensions.cs" />
