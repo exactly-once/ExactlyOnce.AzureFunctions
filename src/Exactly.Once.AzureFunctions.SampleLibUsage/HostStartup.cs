@@ -31,6 +31,7 @@ namespace Exactly.Once.AzureFunctions.SampleLibUsage
                 {
                     o.DatabaseId = databaseId;
                     o.ContainerId = "Outbox";
+                    o.RetentionPeriod = TimeSpan.FromSeconds(30);
                 });
 
                 c.StateStoreIs<StateStore>();

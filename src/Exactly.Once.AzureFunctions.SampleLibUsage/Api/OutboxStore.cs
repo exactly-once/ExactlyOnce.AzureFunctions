@@ -75,7 +75,7 @@ namespace Exactly.Once.AzureFunctions.SampleLibUsage.Api
             }
 
             outboxItem.Id = outboxItem.RequestId;
-            outboxItem.TimeToLiveSeconds = (int)TimeSpan.FromSeconds(100).TotalSeconds;
+            outboxItem.TimeToLiveSeconds = (int)configuration.RetentionPeriod.TotalSeconds;
 
             var batch = container.CreateTransactionalBatch(PartitionKey.None)
                 .DeleteItem(transactionId)
