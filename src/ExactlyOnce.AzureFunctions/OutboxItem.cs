@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Exactly.Once.AzureFunctions.SampleLibUsage.Api
+namespace ExactlyOnce.AzureFunctions
 {
     public class OutboxItem
     {

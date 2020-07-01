@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Exactly.Once.AzureFunctions.SampleLibUsage.Api
+namespace ExactlyOnce.AzureFunctions
 {
     public interface IOnceExecutor
     {

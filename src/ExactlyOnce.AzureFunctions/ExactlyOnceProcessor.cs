@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Exactly.Once.AzureFunctions.SampleLibUsage.Api
+namespace ExactlyOnce.AzureFunctions
 {
     public class ExactlyOnceProcessor
     {

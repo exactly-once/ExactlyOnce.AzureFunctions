@@ -3,7 +3,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Exactly.Once.AzureFunctions.SampleLibUsage.Api
+namespace ExactlyOnce.AzureFunctions
 {
       public static class ExactlyOnceHostingExtensions
     {
