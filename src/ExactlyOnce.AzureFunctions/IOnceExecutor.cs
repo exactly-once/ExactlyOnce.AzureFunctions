@@ -5,12 +5,21 @@ namespace ExactlyOnce.AzureFunctions
 {
     public interface IOnceExecutor
     {
-        IExecutor Once(string requestId);
+        IExecutor Once<TRequest>(string requestId);
+
+        IExecutor Once<TRequest>(Guid requestId);
     }
 
     public interface IExecutor
     {
         Task<SideEffect[]> On<T>(string stateId, Func<T, SideEffect[]> action) where T : State, new();
+        Task<SideEffect[]> On<T>(Guid stateId, Func<T, SideEffect[]> action) where T : State, new();
+
+        Task<SideEffect> On<T>(Guid stateId, Func<T, SideEffect> action) where T : State, new();
+        Task<SideEffect> On<T>(string stateId, Func<T, SideEffect> action) where T : State, new();
+
+        Task On<T>(string stateId, Action<T> action) where T : State, new();
+        Task On<T>(Guid stateId, Action<T> action) where T : State, new();
     }
 
     class OnceExecutor : IOnceExecutor
@@ -22,9 +31,16 @@ namespace ExactlyOnce.AzureFunctions
             this.exactlyOnceProcessor = exactlyOnceProcessor;
         }
 
-        public IExecutor Once(string requestId)
+        public IExecutor Once<TRequest>(string requestId)
         {
-            return new Executor(requestId, exactlyOnceProcessor);
+            var requestTypeAndId = $"{typeof(TRequest).Name}-{requestId}";
+
+            return new Executor(requestTypeAndId, exactlyOnceProcessor);
+        }
+
+        public IExecutor Once<TRequest>(Guid requestId)
+        {
+            return Once<TRequest>(requestId.ToString());
         }
     }
 
@@ -41,7 +57,40 @@ namespace ExactlyOnce.AzureFunctions
 
         public async Task<SideEffect[]> On<TState>(string stateId, Func<TState, SideEffect[]> action) where TState : State, new()
         {
-            return await exactlyOnceProcessor.Process<TState>(requestId, stateId, action);
+            var stateAndRequestId = $"{typeof(TState).Name}-{requestId}";
+
+            return await exactlyOnceProcessor.Process<TState>(stateAndRequestId, stateId, action);
+        }
+
+        public Task<SideEffect[]> On<TState>(Guid stateId, Func<TState, SideEffect[]> action) where TState : State, new()
+        {
+            return On<TState>(stateId.ToString(), action);
+        }
+
+        public Task<SideEffect> On<TState>(Guid stateId, Func<TState, SideEffect> action) where TState : State, new()
+        {
+            return On<TState>(stateId.ToString(), action);
+        }
+
+        public async Task<SideEffect> On<TState>(string stateId, Func<TState, SideEffect> action) where TState : State, new()
+        {
+            var sideEffects = await On<TState>(stateId,s => new []{action(s)});
+
+            return sideEffects[0];
+        }
+
+        public Task On<TState>(string stateId, Action<TState> action) where TState : State, new()
+        {
+            return On<TState>(stateId, s =>
+            {
+                action(s);
+                return new SideEffect[0];
+            });
+        }
+
+        public Task On<TState>(Guid stateId, Action<TState> action) where TState : State, new()
+        {
+            return On(stateId.ToString(), action);
         }
     }
 }

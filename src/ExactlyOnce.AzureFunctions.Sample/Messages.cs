@@ -4,23 +4,22 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class FireAt
     {
+        public Guid AttemptId { get; set; }
         public Guid GameId { get; set; }
         public int Position { get; set; }
     }
 
     public class StartNewRound
     {
+        public Guid RoundId { get; set; }
         public Guid GameId { get; set; }
         public int Position { get; set; }
     }
 
-    public class Hit
+    public class AttemptMade
     {
+        public Guid AttemptId { get; set; }
+        public bool IsHit { get; set; }
         public Guid GameId { get; set; }
-    }
-
-    public class Missed
-    {
-        public Guid GameId { get; set; } 
     }
 }

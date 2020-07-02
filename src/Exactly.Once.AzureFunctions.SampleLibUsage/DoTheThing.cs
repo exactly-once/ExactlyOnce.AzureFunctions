@@ -1,10 +1,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using ExactlyOnce.AzureFunctions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -21,7 +21,8 @@ namespace Exactly.Once.AzureFunctions.SampleLibUsage
 
         [FunctionName("DoTheThing")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
+            HttpRequest req,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
@@ -29,26 +30,27 @@ namespace Exactly.Once.AzureFunctions.SampleLibUsage
             string stateId = req.Query["stateId"];
             string requestId = req.Query["requestId"];
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             requestId ??= data?.requestId;
 
-            var sideEffects = await execute.Once(requestId).On<Counter>(stateId, counter =>
-            {
-                counter.Value++;
-
-                return new SideEffect[]
+            var sideEffects = await execute.Once<HttpRequest>(requestId)
+                .On<Counter>(stateId, counter =>
                 {
-                    new SendMessageSideEffect()
-                };
-            });
+                    counter.Value++;
+
+                    return new SideEffect[]
+                    {
+                        new SendMessage<string>("test")
+                    };
+                });
 
             foreach (var sideEffect in sideEffects)
             {
                 Apply(sideEffect, log);
             }
 
-            string responseMessage = string.IsNullOrEmpty(requestId)
+            var responseMessage = string.IsNullOrEmpty(requestId)
                 ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
                 : $"Hello, {requestId}. This HTTP triggered function executed successfully.";
 
@@ -63,7 +65,6 @@ namespace Exactly.Once.AzureFunctions.SampleLibUsage
 
     public class Counter : State
     {
-        [JsonProperty("value")]
-        public int Value { get; set; }
+        [JsonProperty("value")] public int Value { get; set; }
     }
 }
