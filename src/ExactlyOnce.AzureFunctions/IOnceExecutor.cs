@@ -8,6 +8,8 @@ namespace ExactlyOnce.AzureFunctions
         IExecutor Once<TRequest>(string requestId);
 
         IExecutor Once<TRequest>(Guid requestId);
+
+        Task<TSideEffect> Once<TSideEffect>(string requestId, Func<TSideEffect> action);
     }
 
     public interface IExecutor
@@ -42,6 +44,16 @@ namespace ExactlyOnce.AzureFunctions
         {
             return Once<TRequest>(requestId.ToString());
         }
+
+        public async Task<TSideEffect> Once<TSideEffect>(string requestId, Func<TSideEffect> action)
+        {
+            var sideEffects = await Once<string>(requestId)
+                .On<Request>(Guid.Empty, _ => new[] {new SendMessage<TSideEffect>(action()) });
+
+            return ((SendMessage<TSideEffect>) sideEffects[0]).Message;
+        }
+
+        public class Request : State {}
     }
 
     class Executor : IExecutor

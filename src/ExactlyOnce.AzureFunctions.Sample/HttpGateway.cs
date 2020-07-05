@@ -1,8 +1,4 @@
-using System;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
-using System.Web.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -13,17 +9,16 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class HttpGateway
     {
-        IOnceExecutor executor;
+        IOnceExecutor execute;
 
-        public HttpGateway(IOnceExecutor executor)
+        public HttpGateway(IOnceExecutor execute)
         {
-            this.executor = executor;
+            this.execute = execute;
         }
 
         [FunctionName(nameof(RequestFireAt))]
         public async Task<IActionResult> RequestFireAt(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)]
-            HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             [Queue("fire-attempt")] ICollector<FireAt> collector,
             ILogger log)
         {
@@ -31,32 +26,22 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
             var requestId = req.Query["requestId"];
 
-            var output = await executor.Once<FireAt>(requestId)
-                .On<DummyState>(Guid.Empty,
-                    _ => new SendMessage<FireAt>(new FireAt
-                    {
-                        AttemptId = ToGuid(requestId),
-                        GameId = ToGuid(req.Query["gameId"]),
-                        Position = int.Parse(req.Query["position"])
-                    })
-                );
+            //Check if this works and makes sense
+            var fireAt = await execute.Once(requestId,
+                () => new FireAt
+                {
+                    AttemptId = requestId.ToGuid(),
+                    GameId = req.Query["gameId"].ToGuid(),
+                    Position = int.Parse(req.Query["position"])
+                }
+            );
 
-            if (output is SendMessage<FireAt> send)
-            {
-                collector.Add(send.Message);
+            collector.Add(fireAt);
 
-                return new OkObjectResult("New round requested.");
-            }
-
-            return new BadRequestErrorMessageResult("Ooops");
+            return new OkObjectResult("New round requested.");
         }
 
-        public static Guid ToGuid(string src)
-        {
-            var bytes = new SHA1CryptoServiceProvider().ComputeHash(Encoding.UTF8.GetBytes(src));
-            Array.Resize(ref bytes, 16);
-            return new Guid(bytes);
-        }
+
 
         public class DummyState : State
         {
