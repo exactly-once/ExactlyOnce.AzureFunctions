@@ -1,51 +1,67 @@
-﻿using System;
+using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Logging;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
-    class ShootingRange : Manages<ShootingRange.ShootingRangeData>, IHandler<FireAt>, IHandler<StartNewRound>
+    public class ShootingRange
     {
-        public const int MaxAttemptsInARound = 2;
+        IOnceExecutor executor;
 
-        public void Handle(IHandlerContext context, FireAt command)
+        public ShootingRange(IOnceExecutor executor)
         {
-            if (Data.TargetPosition == command.Position)
-            {
-                context.Publish(new Hit
-                {
-                    Id = context.NewGuid(),
-                    GameId = command.GameId
-                });
-            }
-            else
-            {
-                context.Publish(new Missed
-                {
-                    Id = context.NewGuid(),
-                    GameId = command.GameId
-                });
-            }
-
-            if (Data.NumberOfAttempts + 1 >= MaxAttemptsInARound)
-            {
-                Data.NumberOfAttempts = 0;
-                Data.TargetPosition = context.Random.Next(0, 100);
-            }
-            else
-            {
-                Data.NumberOfAttempts++;
-            }
+            this.executor = executor;
         }
 
-        public void Handle(IHandlerContext context, StartNewRound command)
+        [FunctionName(nameof(ProcessFireAt))]
+        [return: Queue("attempt-updates")]
+        public async Task<AttemptMade> ProcessFireAt([QueueTrigger("fire-attempt", Connection = "AzureWebJobsStorage")]
+            FireAt fireAt,
+            ILogger log)
         {
-            Data.NumberOfAttempts = 0;
-            Data.TargetPosition = command.Position;
+            log.LogInformation($"Processed startRound: gameId={fireAt.GameId}, position={fireAt.Position}");
+
+            var output = await executor.Once<FireAt>(fireAt.AttemptId)
+                .On<ShootingRangeState>(fireAt.GameId, sr =>
+                {
+                    var attemptMade = new AttemptMade
+                    {
+                        AttemptId = fireAt.AttemptId,
+                        GameId = fireAt.GameId
+                    };
+
+                    if (sr.TargetPosition == fireAt.Position)
+                    {
+                        attemptMade.IsHit = true;
+                    }
+                    else
+                    {
+                        attemptMade.IsHit = false;
+                    }
+
+                    return new SendMessage<AttemptMade>(attemptMade);
+                });
+
+            return ((SendMessage<AttemptMade>) output).Message;
         }
 
-        public Guid Map(FireAt m) => m.GameId;
-        public Guid Map(StartNewRound m) => m.GameId;
+        [FunctionName(nameof(StartNewRound))]
+        public async Task StartNewRound([QueueTrigger("start-round", Connection = "AzureWebJobsStorage")]
+            StartNewRound startRound,
+            ILogger log)
+        {
+            log.LogInformation(
+                $"Processed startRound: roundId={startRound.RoundId}, gameId={startRound.GameId} position={startRound.Position}");
 
-        public class ShootingRangeData
+            await executor.Once<StartNewRound>(startRound.RoundId)
+                .On<ShootingRangeState>(startRound.GameId, sr =>
+                {
+                    sr.TargetPosition = startRound.Position;
+                    sr.NumberOfAttempts = 0;
+                });
+        }
+
+        public class ShootingRangeState : State
         {
             public int TargetPosition { get; set; }
             public int NumberOfAttempts { get; set; }

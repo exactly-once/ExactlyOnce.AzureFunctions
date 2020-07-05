@@ -8,7 +8,6 @@
     <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.1.3" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.10" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
-    <PackageReference Include="Streamstone" Version="2.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ExactlyOnce.AzureFunctions\ExactlyOnce.AzureFunctions.csproj" />
@@ -22,8 +21,4 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
-  <Target Name="PostBuild" AfterTargets="_GenerateFunctionsPostBuild">
-    <Exec Command="echo xcopy $(ProjectDir)..\ExactlyOnce.AzureFunctions\$(OutDir)EntryFunction $(TargetDir)EntryFunction /S /I /E /Y" />
-    <Exec Command="xcopy $(ProjectDir)..\ExactlyOnce.AzureFunctions\$(OutDir)EntryFunction $(TargetDir)EntryFunction /S /I /E /Y" />
-  </Target>
 </Project>
