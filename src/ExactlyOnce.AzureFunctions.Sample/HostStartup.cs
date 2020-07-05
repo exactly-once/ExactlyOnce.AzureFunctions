@@ -18,7 +18,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
             var client = new CosmosClient(endpointUri, primaryKey);
             builder.Services.AddSingleton(sp => client);
-            builder.Services.AddSingleton(sp => new StateStore(client, databaseId));
+            builder.Services.AddSingleton(sp => new CosmosDbStateStore(client, databaseId));
 
             builder.AddExactlyOnce(c =>
             {
@@ -29,7 +29,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
                     o.RetentionPeriod = TimeSpan.FromSeconds(30);
                 });
 
-                c.StateStoreIs<StateStore>();
+                c.StateStoreIs<CosmosDbStateStore>();
             });
         }
     }

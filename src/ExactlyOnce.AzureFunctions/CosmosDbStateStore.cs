@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 
-namespace ExactlyOnce.AzureFunctions.Sample
+namespace ExactlyOnce.AzureFunctions
 {
-    class StateStore : IStateStore
+    public class CosmosDbStateStore : IStateStore
     {
         Database database;
 
-        public StateStore(CosmosClient cosmosClient, string databaseId)
+        public CosmosDbStateStore(CosmosClient cosmosClient, string databaseId)
         {
             database = cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId).GetAwaiter().GetResult();
         }
