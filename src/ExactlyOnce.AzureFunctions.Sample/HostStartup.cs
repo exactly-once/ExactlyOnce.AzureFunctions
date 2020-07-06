@@ -33,9 +33,4 @@ namespace ExactlyOnce.AzureFunctions.Sample
             });
         }
     }
-
-    public class Destinations
-    {
-        public const string Workflow = "e1queue";
-    }
 }

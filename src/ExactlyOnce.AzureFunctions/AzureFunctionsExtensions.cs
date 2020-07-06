@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ExactlyOnce.AzureFunctions
 {
-      public static class ExactlyOnceHostingExtensions
+    public static class ExactlyOnceHostingExtensions
     {
         public static IWebJobsBuilder AddExactlyOnce(this IWebJobsBuilder builder,
             Action<ExactlyOnceConfiguration> configure)
@@ -23,10 +23,10 @@ namespace ExactlyOnce.AzureFunctions
             var configuration = new ExactlyOnceConfiguration(outboxConfiguration);
 
             services.AddLogging();
-       
+
             services.AddSingleton<IOnceExecutor>(sp =>
             {
-                var stateStore = (IStateStore)sp.GetRequiredService(configuration.StateStoreType);
+                var stateStore = (IStateStore) sp.GetRequiredService(configuration.StateStoreType);
                 var client = sp.GetRequiredService<CosmosClient>();
 
                 var outboxStore = new OutboxStore(client, outboxConfiguration);

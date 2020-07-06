@@ -51,16 +51,18 @@ namespace ExactlyOnce.AzureFunctions
         {
             return Once<string>(requestId)
                 .On<Request>(Guid.Empty)
-                .WithOutput(_ => action() );
+                .WithOutput(_ => action());
         }
 
-        public class Request : State {}
+        public class Request : State
+        {
+        }
     }
 
     class StateSelector : IStateSelector
     {
-        string requestId;
         ExactlyOnceProcessor exactlyOnceProcessor;
+        string requestId;
 
         public StateSelector(string requestId, ExactlyOnceProcessor exactlyOnceProcessor)
         {
@@ -72,7 +74,7 @@ namespace ExactlyOnce.AzureFunctions
         {
             var stateAndRequestId = $"{typeof(TState).Name}-{requestId}";
 
-            return new OutputInvoker<TState>(stateAndRequestId, stateId, exactlyOnceProcessor); 
+            return new OutputInvoker<TState>(stateAndRequestId, stateId, exactlyOnceProcessor);
         }
 
         public IOutputInvoker<TState> On<TState>(Guid stateId) where TState : State, new()
@@ -85,7 +87,7 @@ namespace ExactlyOnce.AzureFunctions
             return On<TState>(stateId).WithOutput(s =>
             {
                 action(s);
-                return (string)null;
+                return (string) null;
             });
         }
 
@@ -97,9 +99,9 @@ namespace ExactlyOnce.AzureFunctions
 
     class OutputInvoker<TState> : IOutputInvoker<TState> where TState : State, new()
     {
+        ExactlyOnceProcessor processor;
         string requestId;
         string stateId;
-        ExactlyOnceProcessor processor;
 
         public OutputInvoker(string requestId, string stateId, ExactlyOnceProcessor processor)
         {
@@ -110,7 +112,7 @@ namespace ExactlyOnce.AzureFunctions
 
         public Task<TSideEffect> WithOutput<TSideEffect>(Func<TState, TSideEffect> action)
         {
-            return processor.Process<TState, TSideEffect>(requestId, stateId, action);
+            return processor.Process(requestId, stateId, action);
         }
     }
 }

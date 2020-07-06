@@ -27,7 +27,7 @@ namespace ExactlyOnce.AzureFunctions
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                return (new TState{Id = stateId}, (string)null);
+                return (new TState {Id = stateId}, (string) null);
             }
 
             if (!response.IsSuccessStatusCode)
@@ -62,7 +62,7 @@ namespace ExactlyOnce.AzureFunctions
                     value,
                     requestOptions: new ItemRequestOptions
                     {
-                        IfMatchEtag = version,
+                        IfMatchEtag = version
                     });
             }
 
