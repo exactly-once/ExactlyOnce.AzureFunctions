@@ -54,7 +54,7 @@ public class ShootingRangeState : State
 }
 ```
 
-### Configuration
+## Configuration
 
 Library requires `CosmosClient` and `IStateStore` implementation to be registerd the DI container. In addition, it requires outbox configuration.
 
