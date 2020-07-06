@@ -6,11 +6,11 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class ShootingRange
     {
-        IOnceExecutor executor;
+        IOnceExecutor execute;
 
-        public ShootingRange(IOnceExecutor executor)
+        public ShootingRange(IOnceExecutor execute)
         {
-            this.executor = executor;
+            this.execute = execute;
         }
 
         [FunctionName(nameof(ProcessFireAt))]
@@ -21,8 +21,10 @@ namespace ExactlyOnce.AzureFunctions.Sample
         {
             log.LogInformation($"Processed startRound: gameId={fireAt.GameId}, position={fireAt.Position}");
 
-            var output = await executor.Once<FireAt>(fireAt.AttemptId)
-                .On<ShootingRangeState>(fireAt.GameId, sr =>
+            var output = await execute
+                .Once<FireAt>(fireAt.AttemptId)
+                .On<ShootingRangeState>(fireAt.GameId)
+                .WithOutput(sr =>
                 {
                     var attemptMade = new AttemptMade
                     {
@@ -39,10 +41,10 @@ namespace ExactlyOnce.AzureFunctions.Sample
                         attemptMade.IsHit = false;
                     }
 
-                    return new SendMessage<AttemptMade>(attemptMade);
+                    return attemptMade;
                 });
 
-            return ((SendMessage<AttemptMade>) output).Message;
+            return output;
         }
 
         [FunctionName(nameof(StartNewRound))]
@@ -53,7 +55,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
             log.LogInformation(
                 $"Processed startRound: roundId={startRound.RoundId}, gameId={startRound.GameId} position={startRound.Position}");
 
-            await executor.Once<StartNewRound>(startRound.RoundId)
+            await execute.Once<StartNewRound>(startRound.RoundId)
                 .On<ShootingRangeState>(startRound.GameId, sr =>
                 {
                     sr.TargetPosition = startRound.Position;

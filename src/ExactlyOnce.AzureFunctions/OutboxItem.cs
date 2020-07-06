@@ -11,7 +11,7 @@ namespace ExactlyOnce.AzureFunctions
         public string RequestId { get; set; }
 
         [JsonProperty("sideEffects")]
-        public SideEffectWrapper[] SideEffects { get; set; }
+        public string SideEffect { get; set; }
 
         [JsonProperty(PropertyName = "ttl", NullValueHandling = NullValueHandling.Ignore)]
         public int? TimeToLiveSeconds { get; set; }

@@ -5,23 +5,25 @@ namespace ExactlyOnce.AzureFunctions
 {
     public interface IOnceExecutor
     {
-        IExecutor Once<TRequest>(string requestId);
+        IStateSelector Once<TRequest>(string requestId);
 
-        IExecutor Once<TRequest>(Guid requestId);
+        IStateSelector Once<TRequest>(Guid requestId);
 
         Task<TSideEffect> Once<TSideEffect>(string requestId, Func<TSideEffect> action);
     }
 
-    public interface IExecutor
+    public interface IStateSelector
     {
-        Task<SideEffect[]> On<T>(string stateId, Func<T, SideEffect[]> action) where T : State, new();
-        Task<SideEffect[]> On<T>(Guid stateId, Func<T, SideEffect[]> action) where T : State, new();
-
-        Task<SideEffect> On<T>(Guid stateId, Func<T, SideEffect> action) where T : State, new();
-        Task<SideEffect> On<T>(string stateId, Func<T, SideEffect> action) where T : State, new();
+        IOutputInvoker<T> On<T>(string stateId) where T : State, new();
+        IOutputInvoker<T> On<T>(Guid stateId) where T : State, new();
 
         Task On<T>(string stateId, Action<T> action) where T : State, new();
         Task On<T>(Guid stateId, Action<T> action) where T : State, new();
+    }
+
+    public interface IOutputInvoker<TState>
+    {
+        Task<TSideEffect> WithOutput<TSideEffect>(Func<TState, TSideEffect> action);
     }
 
     class OnceExecutor : IOnceExecutor
@@ -33,76 +35,82 @@ namespace ExactlyOnce.AzureFunctions
             this.exactlyOnceProcessor = exactlyOnceProcessor;
         }
 
-        public IExecutor Once<TRequest>(string requestId)
+        public IStateSelector Once<TRequest>(string requestId)
         {
             var requestTypeAndId = $"{typeof(TRequest).Name}-{requestId}";
 
-            return new Executor(requestTypeAndId, exactlyOnceProcessor);
+            return new StateSelector(requestTypeAndId, exactlyOnceProcessor);
         }
 
-        public IExecutor Once<TRequest>(Guid requestId)
+        public IStateSelector Once<TRequest>(Guid requestId)
         {
             return Once<TRequest>(requestId.ToString());
         }
 
-        public async Task<TSideEffect> Once<TSideEffect>(string requestId, Func<TSideEffect> action)
+        public Task<TSideEffect> Once<TSideEffect>(string requestId, Func<TSideEffect> action)
         {
-            var sideEffects = await Once<string>(requestId)
-                .On<Request>(Guid.Empty, _ => new[] {new SendMessage<TSideEffect>(action()) });
-
-            return ((SendMessage<TSideEffect>) sideEffects[0]).Message;
+            return Once<string>(requestId)
+                .On<Request>(Guid.Empty)
+                .WithOutput(_ => action() );
         }
 
         public class Request : State {}
     }
 
-    class Executor : IExecutor
+    class StateSelector : IStateSelector
     {
         string requestId;
         ExactlyOnceProcessor exactlyOnceProcessor;
 
-        public Executor(string requestId, ExactlyOnceProcessor exactlyOnceProcessor)
+        public StateSelector(string requestId, ExactlyOnceProcessor exactlyOnceProcessor)
         {
             this.requestId = requestId;
             this.exactlyOnceProcessor = exactlyOnceProcessor;
         }
 
-        public async Task<SideEffect[]> On<TState>(string stateId, Func<TState, SideEffect[]> action) where TState : State, new()
+        public IOutputInvoker<TState> On<TState>(string stateId) where TState : State, new()
         {
             var stateAndRequestId = $"{typeof(TState).Name}-{requestId}";
 
-            return await exactlyOnceProcessor.Process<TState>(stateAndRequestId, stateId, action);
+            return new OutputInvoker<TState>(stateAndRequestId, stateId, exactlyOnceProcessor); 
         }
 
-        public Task<SideEffect[]> On<TState>(Guid stateId, Func<TState, SideEffect[]> action) where TState : State, new()
+        public IOutputInvoker<TState> On<TState>(Guid stateId) where TState : State, new()
         {
-            return On<TState>(stateId.ToString(), action);
-        }
-
-        public Task<SideEffect> On<TState>(Guid stateId, Func<TState, SideEffect> action) where TState : State, new()
-        {
-            return On<TState>(stateId.ToString(), action);
-        }
-
-        public async Task<SideEffect> On<TState>(string stateId, Func<TState, SideEffect> action) where TState : State, new()
-        {
-            var sideEffects = await On<TState>(stateId,s => new []{action(s)});
-
-            return sideEffects[0];
+            return On<TState>(stateId.ToString());
         }
 
         public Task On<TState>(string stateId, Action<TState> action) where TState : State, new()
         {
-            return On<TState>(stateId, s =>
+            return On<TState>(stateId).WithOutput(s =>
             {
                 action(s);
-                return new SideEffect[0];
+                return (string)null;
             });
         }
 
         public Task On<TState>(Guid stateId, Action<TState> action) where TState : State, new()
         {
             return On(stateId.ToString(), action);
+        }
+    }
+
+    class OutputInvoker<TState> : IOutputInvoker<TState> where TState : State, new()
+    {
+        string requestId;
+        string stateId;
+        ExactlyOnceProcessor processor;
+
+        public OutputInvoker(string requestId, string stateId, ExactlyOnceProcessor processor)
+        {
+            this.requestId = requestId;
+            this.stateId = stateId;
+            this.processor = processor;
+        }
+
+        public Task<TSideEffect> WithOutput<TSideEffect>(Func<TState, TSideEffect> action)
+        {
+            return processor.Process<TState, TSideEffect>(requestId, stateId, action);
         }
     }
 }

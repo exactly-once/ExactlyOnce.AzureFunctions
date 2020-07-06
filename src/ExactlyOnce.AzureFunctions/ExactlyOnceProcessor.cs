@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -16,8 +15,8 @@ namespace ExactlyOnce.AzureFunctions
             this.stateStore = stateStore;
         }
 
-        public async Task<SideEffect[]> Process<TState>(string requestId, string stateId,
-            Func<TState, SideEffect[]> handle) where TState : State, new()
+        public async Task<TSideEffect> Process<TState, TSideEffect>(string requestId, string stateId,
+            Func<TState, TSideEffect> handle) where TState : State, new()
         {
             var (state, version) = await stateStore.Load<TState>(stateId);
 
@@ -30,7 +29,7 @@ namespace ExactlyOnce.AzureFunctions
 
             if (outboxState == null)
             {
-                var sideEffects = handle(state);
+                var sideEffect = handle(state);
 
                 state.TxId = Guid.NewGuid();
 
@@ -38,7 +37,7 @@ namespace ExactlyOnce.AzureFunctions
                 {
                     Id = state.TxId.ToString(),
                     RequestId = requestId,
-                    SideEffects = WrapSideEffects(sideEffects),
+                    SideEffect = JsonConvert.SerializeObject(sideEffect)
                 };
 
                 await outboxStore.Store(outboxState);
@@ -47,25 +46,10 @@ namespace ExactlyOnce.AzureFunctions
 
                 await FinishTransaction(stateId, state, nextVersion);
 
-                return sideEffects;
+                return sideEffect;
             }
 
-            return UnWrapSideEffects(outboxState.SideEffects);
-        }
-
-        SideEffect[] UnWrapSideEffects(SideEffectWrapper[] wrappedSideEffects)
-        {
-            return wrappedSideEffects
-                .Select(se => (SideEffect) JsonConvert.DeserializeObject(se.Content, Type.GetType(se.Type))).ToArray();
-        }
-
-        SideEffectWrapper[] WrapSideEffects(SideEffect[] sideEffects)
-        {
-            return sideEffects.Select(se => new SideEffectWrapper
-            {
-                Type = se.GetType().FullName,
-                Content = JsonConvert.SerializeObject(se)
-            }).ToArray();
+            return JsonConvert.DeserializeObject<TSideEffect>(outboxState.SideEffect);
         }
 
         async Task FinishTransaction<TState>(string stateId, TState state, string version) where TState : State

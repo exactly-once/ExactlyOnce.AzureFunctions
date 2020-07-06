@@ -22,11 +22,11 @@ namespace ExactlyOnce.AzureFunctions.Sample
             [Queue("fire-attempt")] ICollector<FireAt> collector,
             ILogger log)
         {
-            log.LogInformation("Processing RequestFireAt: requestId =.");
-
             var requestId = req.Query["requestId"];
 
-            //Check if this works and makes sense
+            log.LogInformation($"Processing RequestFireAt: requestId={requestId}");
+
+            //HINT: any duplicated executions will return FireAt identical to the first execution
             var fireAt = await execute.Once(requestId,
                 () => new FireAt
                 {
