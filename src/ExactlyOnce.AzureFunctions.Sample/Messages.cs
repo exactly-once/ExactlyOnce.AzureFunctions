@@ -22,4 +22,9 @@ namespace ExactlyOnce.AzureFunctions.Sample
         public bool IsHit { get; set; }
         public Guid GameId { get; set; }
     }
+
+    public class BlobInfo
+    {
+        public string BlobName { get; set; }
+    }
 }

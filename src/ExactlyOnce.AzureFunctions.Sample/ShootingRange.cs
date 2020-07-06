@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
@@ -21,7 +22,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
         {
             log.LogInformation($"Processed startRound: gameId={fireAt.GameId}, position={fireAt.Position}");
 
-            var output = await execute
+            var (message, blob) = await execute
                 .Once<FireAt>(fireAt.AttemptId)
                 .On<ShootingRangeState>(fireAt.GameId)
                 .WithOutput(sr =>
@@ -41,10 +42,11 @@ namespace ExactlyOnce.AzureFunctions.Sample
                         attemptMade.IsHit = false;
                     }
 
-                    return attemptMade;
+                    return (attemptMade, new BlobInfo{BlobName = "This also a side effect"});
                 });
 
-            return output;
+
+            return message;
         }
 
         [FunctionName(nameof(StartNewRound))]
