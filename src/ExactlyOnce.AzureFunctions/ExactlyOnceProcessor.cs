@@ -42,7 +42,17 @@ namespace ExactlyOnce.AzureFunctions
 
                 await outboxStore.Store(outboxState);
 
-                var nextVersion = await stateStore.Upsert(stateId, state, version);
+                string nextVersion;
+
+                try
+                {
+                    nextVersion = await stateStore.Upsert(stateId, state, version);
+                }
+                catch
+                {
+                    await outboxStore.Delete(outboxState.Id);
+                    throw;
+                }
 
                 await FinishTransaction(stateId, state, nextVersion);
 

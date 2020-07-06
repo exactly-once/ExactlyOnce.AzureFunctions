@@ -109,5 +109,10 @@ namespace ExactlyOnce.AzureFunctions
                 throw new Exception("Error storing outbox item");
             }
         }
+
+        public Task Delete(string itemId)
+        {
+            return container.DeleteItemAsync<OutboxItem>(itemId, PartitionKey.None);
+        }
     }
 }
