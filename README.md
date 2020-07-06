@@ -34,7 +34,7 @@ var (message, blob) = await execute
 
 ```
 
-## POCO state
+## State
 
 State that is change by the functions and stored in CosmosDB is a POCO with obligatory `id` field `_transactionId`. All other intrastructural data is stored in a separate collection.
 
