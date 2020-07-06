@@ -6,6 +6,7 @@ using Microsoft.Azure.WebJobs.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 [assembly: WebJobsStartup(typeof(HostStartup))]
+
 namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class HostStartup : IWebJobsStartup

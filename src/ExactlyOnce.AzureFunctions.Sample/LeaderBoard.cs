@@ -13,8 +13,8 @@ namespace ExactlyOnce.AzureFunctions.Sample
             this.execute = execute;
         }
 
-        [FunctionName("UpdateLeaderBoard")]
-        public void UpdateLeaderBoard([QueueTrigger("attempt-updates", Connection = "AzureWebJobsStorage")]
+        [FunctionName(nameof(UpdateLeaderBoard))]
+        public void UpdateLeaderBoard([QueueTrigger("attempt-updates")]
             AttemptMade attempt, ILogger log)
         {
             log.LogInformation($"Processing attempt result: gameId={attempt.GameId}, isHit={attempt.IsHit}");

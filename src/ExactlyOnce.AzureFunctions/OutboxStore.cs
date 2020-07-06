@@ -10,11 +10,11 @@ namespace ExactlyOnce.AzureFunctions
     public class OutboxStore
     {
         OutboxConfiguration configuration;
-        
+        Container container;
+
         CosmosClient cosmosClient;
         Database database;
-        Container container;
-        
+
         JsonSerializerSettings settings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
@@ -75,7 +75,7 @@ namespace ExactlyOnce.AzureFunctions
             }
 
             outboxItem.Id = outboxItem.RequestId;
-            outboxItem.TimeToLiveSeconds = (int)configuration.RetentionPeriod.TotalSeconds;
+            outboxItem.TimeToLiveSeconds = (int) configuration.RetentionPeriod.TotalSeconds;
 
             var batch = container.CreateTransactionalBatch(PartitionKey.None)
                 .DeleteItem(transactionId)
@@ -98,7 +98,7 @@ namespace ExactlyOnce.AzureFunctions
             writer.Write(json);
             writer.Flush();
             stream.Position = 0;
-            
+
             var response = await container.UpsertItemStreamAsync(stream, PartitionKey.None);
 
             // HINT: Outbox item should be created or re-updated (if there was a failure

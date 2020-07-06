@@ -18,7 +18,8 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
         [FunctionName(nameof(RequestFireAt))]
         public async Task<IActionResult> RequestFireAt(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)]
+            HttpRequest req,
             [Queue("fire-attempt")] ICollector<FireAt> collector,
             ILogger log)
         {
@@ -40,7 +41,6 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
             return new OkObjectResult("New round requested.");
         }
-
 
 
         public class DummyState : State

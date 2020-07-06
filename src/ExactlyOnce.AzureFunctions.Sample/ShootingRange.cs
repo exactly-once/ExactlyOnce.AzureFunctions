@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace ExactlyOnce.AzureFunctions.Sample
 {
@@ -16,7 +15,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
 
         [FunctionName(nameof(ProcessFireAt))]
         [return: Queue("attempt-updates")]
-        public async Task<AttemptMade> ProcessFireAt([QueueTrigger("fire-attempt", Connection = "AzureWebJobsStorage")]
+        public async Task<AttemptMade> ProcessFireAt([QueueTrigger("fire-attempt")]
             FireAt fireAt,
             ILogger log)
         {
@@ -42,7 +41,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
                         attemptMade.IsHit = false;
                     }
 
-                    return (attemptMade, new BlobInfo{BlobName = "This also a side effect"});
+                    return (attemptMade, new BlobInfo {BlobName = "This also a side effect"});
                 });
 
 
@@ -50,7 +49,7 @@ namespace ExactlyOnce.AzureFunctions.Sample
         }
 
         [FunctionName(nameof(StartNewRound))]
-        public async Task StartNewRound([QueueTrigger("start-round", Connection = "AzureWebJobsStorage")]
+        public async Task StartNewRound([QueueTrigger("start-round")]
             StartNewRound startRound,
             ILogger log)
         {
