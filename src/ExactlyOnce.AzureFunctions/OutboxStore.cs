@@ -5,6 +5,9 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
+using Microsoft.IO;
+using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions
 {
@@ -16,10 +19,12 @@ namespace ExactlyOnce.AzureFunctions
         Database database;
         Container container;
 
-        readonly JsonSerializerSettings settings = new JsonSerializerSettings
+        private readonly JsonSerializer serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
-        };
+        });
+
+        private static readonly RecyclableMemoryStreamManager memoryStreamManager = new RecyclableMemoryStreamManager();
 
         public OutboxStore(CosmosClient cosmosClient, OutboxConfiguration configuration)
         {
@@ -56,12 +61,9 @@ namespace ExactlyOnce.AzureFunctions
             }
 
             using var streamReader = new StreamReader(response.Content);
+            using var jsonTextReader = new JsonTextReader(streamReader);
 
-            var content = await streamReader.ReadToEndAsync();
-
-            var item = JsonConvert.DeserializeObject<OutboxItem>(content, settings);
-
-            return item;
+            return serializer.Deserialize<OutboxItem>(jsonTextReader);
         }
 
 
@@ -92,12 +94,12 @@ namespace ExactlyOnce.AzureFunctions
 
         public async Task Store(OutboxItem outboxItem, CancellationToken cancellationToken = default)
         {
-            var json = JsonConvert.SerializeObject(outboxItem, settings);
+            await using var stream = memoryStreamManager.GetStream();
+            await using var streamWriter = new StreamWriter(stream);
+            using var writer = new JsonTextWriter(streamWriter);
 
-            await using var stream = new MemoryStream();
-            await using var writer = new StreamWriter(stream);
-            await writer.WriteAsync(json);
-            await writer.FlushAsync();
+            serializer.Serialize(writer, outboxItem);
+            await streamWriter.FlushAsync().ConfigureAwait(false);
             stream.Position = 0;
 
             var response = await container.UpsertItemStreamAsync(stream, PartitionKey.None, cancellationToken: cancellationToken);
