@@ -36,19 +36,21 @@ namespace ExactlyOnce.AzureFunctions
 
         async Task Initialize()
         {
-            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId);
+            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId)
+                .ConfigureAwait(false);
 
             container = await database.CreateContainerIfNotExistsAsync(new ContainerProperties
             {
                 Id = configuration.ContainerId,
                 PartitionKeyPath = "/None",
                 DefaultTimeToLive = -1 //No expiration unless explicitly set on item level
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task<OutboxItem> Get(string id, CancellationToken cancellationToken = default)
         {
-            using var response = await container.ReadItemStreamAsync(id, PartitionKey.None, cancellationToken: cancellationToken);
+            using var response = await container.ReadItemStreamAsync(id, PartitionKey.None, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -84,7 +86,8 @@ namespace ExactlyOnce.AzureFunctions
                 .DeleteItem(transactionId)
                 .UpsertItem(outboxItem);
 
-            var result = await batch.ExecuteAsync(cancellationToken);
+            var result = await batch.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             if (result.IsSuccessStatusCode == false)
             {
@@ -94,8 +97,10 @@ namespace ExactlyOnce.AzureFunctions
 
         public async Task Store(OutboxItem outboxItem, CancellationToken cancellationToken = default)
         {
-            await using var stream = memoryStreamManager.GetStream();
-            await using var streamWriter = new StreamWriter(stream);
+            // ReSharper disable once UseAwaitUsing
+            using var stream = memoryStreamManager.GetStream();
+            // ReSharper disable once UseAwaitUsing
+            using var streamWriter = new StreamWriter(stream);
             using var writer = new JsonTextWriter(streamWriter);
 
             serializer.Serialize(writer, outboxItem);
