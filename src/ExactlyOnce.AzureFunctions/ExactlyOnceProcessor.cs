@@ -29,43 +29,43 @@ namespace ExactlyOnce.AzureFunctions
 
             var outboxState = await outboxStore.Get(requestId, cancellationToken);
 
-            if (outboxState == null)
+            if (outboxState != null)
             {
-                var sideEffect = handle(state);
-
-                state.TxId = Guid.NewGuid();
-
-                outboxState = new OutboxItem
-                {
-                    Id = state.TxId.ToString(),
-                    RequestId = requestId,
-                    SideEffect = JsonConvert.SerializeObject(sideEffect)
-                };
-
-                await outboxStore.Store(outboxState, cancellationToken)
-                    .ConfigureAwait(false);
-
-                string nextVersion;
-
-                try
-                {
-                    nextVersion = await stateStore.Upsert(stateId, state, version, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception e) when (!(e is OperationCanceledException))
-                {
-                    await outboxStore.Delete(outboxState.Id, cancellationToken)
-                        .ConfigureAwait(false);
-                    throw;
-                }
-
-                await FinishTransaction(stateId, state, nextVersion, cancellationToken)
-                    .ConfigureAwait(false);
-
-                return sideEffect;
+                return JsonConvert.DeserializeObject<TSideEffect>(outboxState.SideEffect);
             }
 
-            return JsonConvert.DeserializeObject<TSideEffect>(outboxState.SideEffect);
+            var sideEffect = handle(state);
+
+            state.TxId = Guid.NewGuid();
+
+            outboxState = new OutboxItem
+            {
+                Id = state.TxId.ToString(),
+                RequestId = requestId,
+                SideEffect = JsonConvert.SerializeObject(sideEffect)
+            };
+
+            await outboxStore.Store(outboxState, cancellationToken)
+                .ConfigureAwait(false);
+
+            string nextVersion;
+
+            try
+            {
+                nextVersion = await stateStore.Upsert(stateId, state, version, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception e) when (!(e is OperationCanceledException))
+            {
+                await outboxStore.Delete(outboxState.Id, cancellationToken)
+                    .ConfigureAwait(false);
+                throw;
+            }
+
+            await FinishTransaction(stateId, state, nextVersion, cancellationToken)
+                .ConfigureAwait(false);
+
+            return sideEffect;
         }
 
         async Task FinishTransaction<TState>(string stateId, TState state, string version, CancellationToken cancellationToken = default) where TState : State
