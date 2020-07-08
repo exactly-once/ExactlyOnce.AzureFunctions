@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ExactlyOnce.AzureFunctions
@@ -16,13 +17,16 @@ namespace ExactlyOnce.AzureFunctions
             database = cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId).GetAwaiter().GetResult();
         }
 
-        public async Task<(TState, string)> Load<TState>(string stateId) where TState : State, new()
+
+        public async Task<(TState, string)> Load<TState>(string stateId, CancellationToken cancellationToken = default) where TState : State, new()
         {
             Container container = await database
                 .DefineContainer(typeof(TState).Name, "/id")
-                .CreateIfNotExistsAsync();
+                .CreateIfNotExistsAsync()
+                .ConfigureAwait(false);
 
-            using var response = await container.ReadItemStreamAsync(stateId, new PartitionKey(stateId));
+            using var response = await container.ReadItemStreamAsync(stateId, new PartitionKey(stateId), cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -36,40 +40,37 @@ namespace ExactlyOnce.AzureFunctions
 
             using var streamReader = new StreamReader(response.Content);
 
-            var content = await streamReader.ReadToEndAsync();
+            var content = await streamReader.ReadToEndAsync()
+                .ConfigureAwait(false);;
 
             var state = JsonConvert.DeserializeObject<TState>(content);
 
             return (state, response.Headers.ETag);
         }
 
-        public async Task<string> Upsert<TState>(string stateId, TState value, string version) where TState : State
+        public async Task<string> Upsert<TState>(string stateId, TState value, string version, CancellationToken cancellationToken = default) where TState : State
         {
             Container container = await database
                 .DefineContainer(typeof(TState).Name, "/id")
-                .CreateIfNotExistsAsync();
+                .CreateIfNotExistsAsync()
+                .ConfigureAwait(false);
 
             ItemResponse<TState> response;
 
             try
             {
-                if (version == null)
-                {
-                    response = await container.CreateItemAsync(value, new PartitionKey(stateId));
-                }
-                else
-                {
-                    response = await container.UpsertItemAsync(
-                        value,
-                        requestOptions: new ItemRequestOptions
-                        {
-                            IfMatchEtag = version
-                        });
-                }
+                response = await container.CreateItemAsync(value, new PartitionKey(stateId), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
             }
             catch (CosmosException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                throw new OptimisticConcurrencyFailure();
+                response = await container.UpsertItemAsync(
+                    value,
+                    requestOptions: new ItemRequestOptions
+                    {
+                        IfMatchEtag = version,
+                    }, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             return response.Headers.ETag;

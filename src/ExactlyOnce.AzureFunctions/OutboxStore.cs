@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ExactlyOnce.AzureFunctions
@@ -40,9 +41,9 @@ namespace ExactlyOnce.AzureFunctions
             });
         }
 
-        public async Task<OutboxItem> Get(string id)
+        public async Task<OutboxItem> Get(string id, CancellationToken cancellationToken = default)
         {
-            using var response = await container.ReadItemStreamAsync(id, PartitionKey.None);
+            using var response = await container.ReadItemStreamAsync(id, PartitionKey.None, cancellationToken: cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -64,9 +65,9 @@ namespace ExactlyOnce.AzureFunctions
         }
 
 
-        public async Task Commit(string transactionId)
+        public async Task Commit(string transactionId, CancellationToken cancellationToken = default)
         {
-            var outboxItem = await Get(transactionId);
+            var outboxItem = await Get(transactionId, cancellationToken);
 
             //HINT: outbox item has already been committed
             if (outboxItem == null)
@@ -81,7 +82,7 @@ namespace ExactlyOnce.AzureFunctions
                 .DeleteItem(transactionId)
                 .UpsertItem(outboxItem);
 
-            var result = await batch.ExecuteAsync();
+            var result = await batch.ExecuteAsync(cancellationToken);
 
             if (result.IsSuccessStatusCode == false)
             {
@@ -89,17 +90,17 @@ namespace ExactlyOnce.AzureFunctions
             }
         }
 
-        public async Task Store(OutboxItem outboxItem)
+        public async Task Store(OutboxItem outboxItem, CancellationToken cancellationToken = default)
         {
             var json = JsonConvert.SerializeObject(outboxItem, settings);
 
             await using var stream = new MemoryStream();
             await using var writer = new StreamWriter(stream);
-            writer.Write(json);
-            writer.Flush();
+            await writer.WriteAsync(json);
+            await writer.FlushAsync();
             stream.Position = 0;
 
-            var response = await container.UpsertItemStreamAsync(stream, PartitionKey.None);
+            var response = await container.UpsertItemStreamAsync(stream, PartitionKey.None, cancellationToken: cancellationToken);
 
             // HINT: Outbox item should be created or re-updated (if there was a failure
             //       during previous commit).
@@ -110,9 +111,9 @@ namespace ExactlyOnce.AzureFunctions
             }
         }
 
-        public Task Delete(string itemId)
+        public Task Delete(string itemId, CancellationToken cancellationToken = default)
         {
-            return container.DeleteItemAsync<OutboxItem>(itemId, PartitionKey.None);
+            return container.DeleteItemAsync<OutboxItem>(itemId, PartitionKey.None, cancellationToken: cancellationToken);
         }
     }
 }

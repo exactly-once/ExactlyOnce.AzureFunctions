@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ExactlyOnce.AzureFunctions
@@ -16,16 +16,18 @@ namespace ExactlyOnce.AzureFunctions
         }
 
         public async Task<TSideEffect> Process<TState, TSideEffect>(string requestId, string stateId,
-            Func<TState, TSideEffect> handle) where TState : State, new()
+            Func<TState, TSideEffect> handle, CancellationToken cancellationToken = default) where TState : State, new()
         {
-            var (state, version) = await stateStore.Load<TState>(stateId);
+            var (state, version) = await stateStore.Load<TState>(stateId, cancellationToken)
+                .ConfigureAwait(false);
 
             if (state.TxId != null)
             {
-                await FinishTransaction(stateId, state, version);
+                await FinishTransaction(stateId, state, version, cancellationToken)
+                    .ConfigureAwait(false);
             }
 
-            var outboxState = await outboxStore.Get(requestId);
+            var outboxState = await outboxStore.Get(requestId, cancellationToken);
 
             if (outboxState == null)
             {
@@ -40,21 +42,25 @@ namespace ExactlyOnce.AzureFunctions
                     SideEffect = JsonConvert.SerializeObject(sideEffect)
                 };
 
-                await outboxStore.Store(outboxState);
+                await outboxStore.Store(outboxState, cancellationToken)
+                    .ConfigureAwait(false);
 
                 string nextVersion;
 
                 try
                 {
-                    nextVersion = await stateStore.Upsert(stateId, state, version);
+                    nextVersion = await stateStore.Upsert(stateId, state, version, cancellationToken)
+                        .ConfigureAwait(false);
                 }
-                catch
+                catch (Exception e) when (!(e is OperationCanceledException))
                 {
-                    await outboxStore.Delete(outboxState.Id);
+                    await outboxStore.Delete(outboxState.Id, cancellationToken)
+                        .ConfigureAwait(false);
                     throw;
                 }
 
-                await FinishTransaction(stateId, state, nextVersion);
+                await FinishTransaction(stateId, state, nextVersion, cancellationToken)
+                    .ConfigureAwait(false);
 
                 return sideEffect;
             }
@@ -62,17 +68,19 @@ namespace ExactlyOnce.AzureFunctions
             return JsonConvert.DeserializeObject<TSideEffect>(outboxState.SideEffect);
         }
 
-        async Task FinishTransaction<TState>(string stateId, TState state, string version) where TState : State
+        async Task FinishTransaction<TState>(string stateId, TState state, string version, CancellationToken cancellationToken = default) where TState : State
         {
             if (state.TxId.HasValue == false)
             {
                 throw new InvalidOperationException($"No pending transaction for state id {stateId}.");
             }
 
-            await outboxStore.Commit(state.TxId.Value.ToString());
+            await outboxStore.Commit(state.TxId.Value.ToString(), cancellationToken)
+                .ConfigureAwait(false);
 
             state.TxId = null;
-            await stateStore.Upsert(stateId, state, version);
+            await stateStore.Upsert(stateId, state, version, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 }
