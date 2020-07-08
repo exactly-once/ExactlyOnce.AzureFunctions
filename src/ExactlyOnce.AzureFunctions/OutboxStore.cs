@@ -11,12 +11,12 @@ namespace ExactlyOnce.AzureFunctions
     public class OutboxStore
     {
         OutboxConfiguration configuration;
-        Container container;
 
         CosmosClient cosmosClient;
         Database database;
+        Container container;
 
-        JsonSerializerSettings settings = new JsonSerializerSettings
+        readonly JsonSerializerSettings settings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
         };
