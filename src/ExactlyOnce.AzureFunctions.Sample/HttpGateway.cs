@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -9,31 +8,23 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class HttpGateway
     {
-        IOnceExecutor execute;
-
-        public HttpGateway(IOnceExecutor execute)
-        {
-            this.execute = execute;
-        }
-
         [FunctionName(nameof(RequestFireAt))]
         public async Task<IActionResult> RequestFireAt(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)]
-            HttpRequest req,
+            FireAtRequest request,
+            [ExactlyOnce("{RequestId}")] IOnceExecutor execute,
             [Queue("fire-attempt")] ICollector<FireAt> collector,
             ILogger log)
         {
-            var requestId = req.Query["requestId"];
-
-            log.LogInformation($"Processing RequestFireAt: requestId={requestId}");
+            log.LogInformation($"Processing RequestFireAt: requestId={request.RequestId}");
 
             //HINT: any duplicated executions will return FireAt identical to the first execution
-            var fireAt = await execute.Once(requestId,
+            var fireAt = await execute.Once(
                 () => new FireAt
                 {
-                    AttemptId = requestId.ToGuid(),
-                    GameId = req.Query["gameId"].ToGuid(),
-                    Position = int.Parse(req.Query["position"])
+                    AttemptId = request.RequestId.ToGuid(),
+                    GameId = request.GameId.ToGuid(),
+                    Position = request.Position
                 }
             );
 
@@ -42,9 +33,11 @@ namespace ExactlyOnce.AzureFunctions.Sample
             return new OkObjectResult("New round requested.");
         }
 
-
-        public class DummyState : State
+        public class FireAtRequest
         {
+            public string RequestId { get; set; }
+            public string GameId {get; set; }
+            public int Position {get; set; }
         }
     }
 }

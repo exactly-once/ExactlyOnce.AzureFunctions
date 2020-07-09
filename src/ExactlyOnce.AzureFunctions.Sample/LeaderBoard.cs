@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -6,21 +7,15 @@ namespace ExactlyOnce.AzureFunctions.Sample
 {
     public class LeaderBoard
     {
-        IOnceExecutor execute;
-
-        public LeaderBoard(IOnceExecutor execute)
-        {
-            this.execute = execute;
-        }
-
         [FunctionName(nameof(UpdateLeaderBoard))]
-        public void UpdateLeaderBoard([QueueTrigger("attempt-updates")]
-            AttemptMade attempt, ILogger log)
+        public async Task UpdateLeaderBoard(
+            [QueueTrigger("attempt-updates")] AttemptMade attempt, 
+            [ExactlyOnce(requestId: "{attemptId}", stateId: "{gameId}")] IOnceExecutor<LeaderBoardState> execute,
+            ILogger log)
         {
             log.LogInformation($"Processing attempt result: gameId={attempt.GameId}, isHit={attempt.IsHit}");
 
-            execute.Once<AttemptMade>(attempt.AttemptId)
-                .On<LeaderBoardState>(attempt.GameId, board =>
+            await execute.Once(board =>
                 {
                     board.NumberOfAttempts++;
 
