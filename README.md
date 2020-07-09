@@ -1,42 +1,50 @@
 ## Overview
 
-This repository shows how to use exactly-once processing in AzureFunctions environment.  
+This repository is sample of the exactly-once processing in AzureFunctions environment.  
 
 ## Consistent output
 
-The sample shows how to leverage exactly-once with state stored in CosmosDB and communication over HTTP and Azure Storage Queues. 
+The sample shows how to leverage exactly-once with using CosmosDB as a storage system with communication over HTTP and Azure Storage Queues. 
 
-At the code level processing logic gets wrapped into lambda passed to the exaclty-once library. The library makes consistent output ie. exaclty the same for duplicated and out-of-order executions. For example, in the sinppet below `(message, blog)` tuple will be consistently returned:
+At the code level processing logic gets wrapped into lambda passed to `IOnceExecutor<TState>`. The executor ensures consistent output - for a given combination of `requestId`, `stateId` and `TState` values the `Once` method will return exaclty same output. In the sample below for each `attemptId` and `gameId` the `Once` method will always return identical output.
 
 ``` csharp
-var (message, blob) = await execute
-      .Once<FireAt>(fireAt.AttemptId)
-      .On<ShootingRangeState>(fireAt.GameId)
-      .WithOutput(sr =>
-      {
-          var attemptMade = new AttemptMade
-          {
-              AttemptId = fireAt.AttemptId,
-              GameId = fireAt.GameId
-          };
+[FunctionName(nameof(ProcessFireAt))]
+[return: Queue("attempt-updates")]
+public async Task<AttemptMade> ProcessFireAt(
+    [QueueTrigger("fire-attempt")] FireAt fireAt,
+    [ExactlyOnce(requestId: "{attemptId}", stateId: "{gameId}")] IOnceExecutor<ShootingRangeState> execute,
+    ILogger log)
+{
+    log.LogInformation($"Processed startRound: gameId={fireAt.GameId}, position={fireAt.Position}");
 
-          if (sr.TargetPosition == fireAt.Position)
-          {
-              attemptMade.IsHit = true;
-          }
-          else
-          {
-              attemptMade.IsHit = false;
-          }
+    var (message, blob) = await execute.Once(sr =>
+    {
+        var attemptMade = new AttemptMade
+        {
+            AttemptId = fireAt.AttemptId,
+            GameId = fireAt.GameId
+        };
 
-          return (attemptMade, new BlobInfo{BlobName = "This also a side effect"});
-      });
+        if (sr.TargetPosition == fireAt.Position)
+        {
+            attemptMade.IsHit = true;
+        }
+        else
+        {
+            attemptMade.IsHit = false;
+        }
 
+        return (attemptMade, new BlobInfo {BlobName = "This also a side effect"});
+    });
+
+    return message;
+}
 ```
 
 ## State
 
-State that is change by the functions and stored in CosmosDB is a POCO with obligatory `id` field `_transactionId`. All other intrastructural data is stored in a separate collection.
+State that is changed inside the function gets stored in CosmosDB. It has to inherit from `State` object that defines obligatory `id` and `_transactionId` fields. 
 
 ``` csharp
 
@@ -53,6 +61,8 @@ public class ShootingRangeState : State
     public int NumberOfAttempts { get; set; }
 }
 ```
+
+All intrastructural data used for ensuring the once behavior are stored in a separte collection.
 
 ## Configuration
 
