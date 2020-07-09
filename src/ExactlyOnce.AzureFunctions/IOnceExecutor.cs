@@ -57,7 +57,7 @@ namespace ExactlyOnce.AzureFunctions
             return Once(s =>
             {
                 action(s);
-                return (string) null;
+                return (string)null;
             });
         }
     }
@@ -76,7 +76,7 @@ namespace ExactlyOnce.AzureFunctions
             return processor.Once(_ => action());
         }
 
-        public class Request : State {}
+        public class Request : State { }
     }
 
     public class OnceExecutorFactory

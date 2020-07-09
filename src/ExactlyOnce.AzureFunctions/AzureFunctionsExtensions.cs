@@ -1,14 +1,13 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
+﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Description;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Config;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ExactlyOnce.AzureFunctions
 {
@@ -62,10 +61,10 @@ namespace ExactlyOnce.AzureFunctions
 
             var method = typeof(OnceExecutorFactory).GetMethods()
                 .First(m => m.IsGenericMethod && m.Name == nameof(OnceExecutorFactory.Create));
-            
+
             var genericMethod = method.MakeGenericMethod(stateType);
 
-            return genericMethod.Invoke(factory, new object[]{requestId, stateId});
+            return genericMethod.Invoke(factory, new object[] { requestId, stateId });
         }
 
         public string ToInvokeString()
@@ -125,7 +124,7 @@ namespace ExactlyOnce.AzureFunctions
 
             services.AddSingleton(sp =>
             {
-                var stateStore = (IStateStore) sp.GetRequiredService(configuration.StateStoreType);
+                var stateStore = (IStateStore)sp.GetRequiredService(configuration.StateStoreType);
                 var client = sp.GetRequiredService<CosmosClient>();
 
                 var outboxStore = new OutboxStore(client, outboxConfiguration);
@@ -133,9 +132,7 @@ namespace ExactlyOnce.AzureFunctions
             });
 
             services.AddSingleton<OnceExecutorFactory>();
-            //services.AddSingleton(typeof(IOnceExecutor<>), typeof(OnceExecutor<>));
-            //services.AddSingleton(typeof(IOnceExecutor), typeof(OnceExecutor));
-            
+
             return configuration;
         }
     }

@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions
 {
@@ -75,7 +75,7 @@ namespace ExactlyOnce.AzureFunctions
             }
 
             outboxItem.Id = outboxItem.RequestId;
-            outboxItem.TimeToLiveSeconds = (int) configuration.RetentionPeriod.TotalSeconds;
+            outboxItem.TimeToLiveSeconds = (int)configuration.RetentionPeriod.TotalSeconds;
 
             var batch = container.CreateTransactionalBatch(PartitionKey.None)
                 .DeleteItem(transactionId)

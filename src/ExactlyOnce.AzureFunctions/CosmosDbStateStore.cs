@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions
 {
@@ -26,7 +26,7 @@ namespace ExactlyOnce.AzureFunctions
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                return (new TState {Id = stateId}, (string) null);
+                return (new TState { Id = stateId }, (string)null);
             }
 
             if (!response.IsSuccessStatusCode)
