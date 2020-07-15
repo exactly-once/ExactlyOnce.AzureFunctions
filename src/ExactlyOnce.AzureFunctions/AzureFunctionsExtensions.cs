@@ -112,6 +112,8 @@ namespace ExactlyOnce.AzureFunctions
 
             configure(configuration);
 
+            configuration.Validate();
+
             return builder;
         }
 
@@ -124,8 +126,9 @@ namespace ExactlyOnce.AzureFunctions
 
             services.AddSingleton(sp =>
             {
-                var stateStore = (IStateStore)sp.GetRequiredService(configuration.StateStoreType);
-                var client = sp.GetRequiredService<CosmosClient>();
+                var client = configuration.CosmosClientFactory();
+
+                var stateStore = new CosmosDbStateStore(client, outboxConfiguration.DatabaseId);
 
                 var outboxStore = new OutboxStore(client, outboxConfiguration);
                 return new ExactlyOnceProcessor(outboxStore, stateStore);
@@ -140,7 +143,8 @@ namespace ExactlyOnce.AzureFunctions
     public class ExactlyOnceConfiguration
     {
         OutboxConfiguration outboxConfiguration;
-        public Type StateStoreType;
+
+        public Func<CosmosClient> CosmosClientFactory;
 
         internal ExactlyOnceConfiguration(OutboxConfiguration outboxConfiguration)
         {
@@ -156,9 +160,17 @@ namespace ExactlyOnce.AzureFunctions
             return this;
         }
 
-        public void StateStoreIs<T>() where T : IStateStore
+        public void UseCosmosClient(Func<CosmosClient> factory)
         {
-            StateStoreType = typeof(T);
+            CosmosClientFactory = factory;
+        }
+
+        public void Validate()
+        {
+            if (CosmosClientFactory == default)
+            {
+                throw new Exception($"CosmosClient must be configured via {nameof(UseCosmosClient)} method." );
+            }
         }
     }
 }

@@ -13,24 +13,22 @@ namespace ExactlyOnce.AzureFunctions.Sample
     {
         public void Configure(IWebJobsBuilder builder)
         {
-            var endpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri");
-            var primaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key");
-            var databaseId = "E1Sandbox";
-
-            var client = new CosmosClient(endpointUri, primaryKey);
-            builder.Services.AddSingleton(sp => client);
-            builder.Services.AddSingleton(sp => new CosmosDbStateStore(client, databaseId));
-
             builder.AddExactlyOnce(c =>
             {
                 c.ConfigureOutbox(o =>
                 {
-                    o.DatabaseId = databaseId;
+                    o.DatabaseId = "E1Sandbox";
                     o.ContainerId = "Outbox";
                     o.RetentionPeriod = TimeSpan.FromSeconds(30);
                 });
 
-                c.StateStoreIs<CosmosDbStateStore>();
+                c.UseCosmosClient(() =>
+                {
+                    var endpointUri = Environment.GetEnvironmentVariable("E1_CosmosDB_EndpointUri");
+                    var primaryKey = Environment.GetEnvironmentVariable("E1_CosmosDB_Key");
+
+                    return new CosmosClient(endpointUri, primaryKey);
+                });
             });
         }
     }
