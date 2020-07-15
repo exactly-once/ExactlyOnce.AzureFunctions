@@ -17,7 +17,6 @@ namespace ExactlyOnce.AzureFunctions
             database = cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId).GetAwaiter().GetResult();
         }
 
-
         public async Task<(TState, string)> Load<TState>(string stateId, CancellationToken cancellationToken = default) where TState : State, new()
         {
             Container container = await database
@@ -55,25 +54,23 @@ namespace ExactlyOnce.AzureFunctions
                 .CreateIfNotExistsAsync()
                 .ConfigureAwait(false);
 
-            ItemResponse<TState> response;
-
             try
             {
-                response = await container.CreateItemAsync(value, new PartitionKey(stateId), cancellationToken: cancellationToken)
+                var response = await container.UpsertItemAsync(
+                        value,
+                        requestOptions: new ItemRequestOptions
+                        {
+                            IfMatchEtag = version,
+                        }, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
-            }
-            catch (CosmosException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
-            {
-                response = await container.UpsertItemAsync(
-                    value,
-                    requestOptions: new ItemRequestOptions
-                    {
-                        IfMatchEtag = version,
-                    }, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-            }
 
-            return response.Headers.ETag;
+                return response.Headers.ETag;
+            }
+            catch (CosmosException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed || 
+                                            e.StatusCode == HttpStatusCode.Conflict)
+            {
+                throw new OptimisticConcurrencyFailure();
+            }
         }
     }
 }

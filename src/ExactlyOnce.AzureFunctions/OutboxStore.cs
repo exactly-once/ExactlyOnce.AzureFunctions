@@ -5,9 +5,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
 using Microsoft.IO;
-using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions
 {
@@ -19,12 +17,12 @@ namespace ExactlyOnce.AzureFunctions
         Database database;
         Container container;
 
-        private readonly JsonSerializer serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings
+        readonly JsonSerializer serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
         });
 
-        private static readonly RecyclableMemoryStreamManager memoryStreamManager = new RecyclableMemoryStreamManager();
+        static readonly RecyclableMemoryStreamManager MemoryStreamManager = new RecyclableMemoryStreamManager();
 
         public OutboxStore(CosmosClient cosmosClient, OutboxConfiguration configuration)
         {
@@ -89,16 +87,21 @@ namespace ExactlyOnce.AzureFunctions
             var result = await batch.ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
+            //HINT: it's possible that outbox item has been already committed in which case
+            //      item with transactionId doesn't exist anymore
             if (result.IsSuccessStatusCode == false)
             {
-                throw new Exception(result.ErrorMessage);
+                if (result.StatusCode != HttpStatusCode.NotFound)
+                {
+                    throw new Exception(result.ErrorMessage);
+                }
             }
         }
 
         public async Task Store(OutboxItem outboxItem, CancellationToken cancellationToken = default)
         {
             // ReSharper disable once UseAwaitUsing
-            using var stream = memoryStreamManager.GetStream();
+            using var stream = MemoryStreamManager.GetStream();
             // ReSharper disable once UseAwaitUsing
             using var streamWriter = new StreamWriter(stream);
             using var writer = new JsonTextWriter(streamWriter);
