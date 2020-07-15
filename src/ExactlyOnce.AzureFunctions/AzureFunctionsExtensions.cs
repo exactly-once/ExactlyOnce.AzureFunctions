@@ -151,6 +151,8 @@ namespace ExactlyOnce.AzureFunctions
         {
             configure(outboxConfiguration);
 
+            outboxConfiguration.Validate();
+
             return this;
         }
 
