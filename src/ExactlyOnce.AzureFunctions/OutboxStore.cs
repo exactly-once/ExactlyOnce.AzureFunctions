@@ -3,22 +3,28 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
+using Microsoft.IO;
+using Newtonsoft.Json;
 
 namespace ExactlyOnce.AzureFunctions
 {
     public class OutboxStore
     {
         OutboxConfiguration configuration;
-        Container container;
 
         CosmosClient cosmosClient;
         Database database;
+        Container container;
 
-        JsonSerializerSettings settings = new JsonSerializerSettings
+        private readonly JsonSerializer serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
-        };
+        });
+
+        private static readonly RecyclableMemoryStreamManager memoryStreamManager = new RecyclableMemoryStreamManager();
 
         public OutboxStore(CosmosClient cosmosClient, OutboxConfiguration configuration)
         {
@@ -30,19 +36,21 @@ namespace ExactlyOnce.AzureFunctions
 
         async Task Initialize()
         {
-            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId);
+            database = await cosmosClient.CreateDatabaseIfNotExistsAsync(configuration.DatabaseId)
+                .ConfigureAwait(false);
 
             container = await database.CreateContainerIfNotExistsAsync(new ContainerProperties
             {
                 Id = configuration.ContainerId,
                 PartitionKeyPath = "/None",
                 DefaultTimeToLive = -1 //No expiration unless explicitly set on item level
-            });
+            }).ConfigureAwait(false);
         }
 
-        public async Task<OutboxItem> Get(string id)
+        public async Task<OutboxItem> Get(string id, CancellationToken cancellationToken = default)
         {
-            using var response = await container.ReadItemStreamAsync(id, PartitionKey.None);
+            using var response = await container.ReadItemStreamAsync(id, PartitionKey.None, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -55,18 +63,15 @@ namespace ExactlyOnce.AzureFunctions
             }
 
             using var streamReader = new StreamReader(response.Content);
+            using var jsonTextReader = new JsonTextReader(streamReader);
 
-            var content = await streamReader.ReadToEndAsync();
-
-            var item = JsonConvert.DeserializeObject<OutboxItem>(content, settings);
-
-            return item;
+            return serializer.Deserialize<OutboxItem>(jsonTextReader);
         }
 
 
-        public async Task Commit(string transactionId)
+        public async Task Commit(string transactionId, CancellationToken cancellationToken = default)
         {
-            var outboxItem = await Get(transactionId);
+            var outboxItem = await Get(transactionId, cancellationToken);
 
             //HINT: outbox item has already been committed
             if (outboxItem == null)
@@ -81,7 +86,8 @@ namespace ExactlyOnce.AzureFunctions
                 .DeleteItem(transactionId)
                 .UpsertItem(outboxItem);
 
-            var result = await batch.ExecuteAsync();
+            var result = await batch.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             if (result.IsSuccessStatusCode == false)
             {
@@ -89,17 +95,19 @@ namespace ExactlyOnce.AzureFunctions
             }
         }
 
-        public async Task Store(OutboxItem outboxItem)
+        public async Task Store(OutboxItem outboxItem, CancellationToken cancellationToken = default)
         {
-            var json = JsonConvert.SerializeObject(outboxItem, settings);
+            // ReSharper disable once UseAwaitUsing
+            using var stream = memoryStreamManager.GetStream();
+            // ReSharper disable once UseAwaitUsing
+            using var streamWriter = new StreamWriter(stream);
+            using var writer = new JsonTextWriter(streamWriter);
 
-            await using var stream = new MemoryStream();
-            await using var writer = new StreamWriter(stream);
-            writer.Write(json);
-            writer.Flush();
+            serializer.Serialize(writer, outboxItem);
+            await streamWriter.FlushAsync().ConfigureAwait(false);
             stream.Position = 0;
 
-            var response = await container.UpsertItemStreamAsync(stream, PartitionKey.None);
+            var response = await container.UpsertItemStreamAsync(stream, PartitionKey.None, cancellationToken: cancellationToken);
 
             // HINT: Outbox item should be created or re-updated (if there was a failure
             //       during previous commit).
@@ -110,9 +118,9 @@ namespace ExactlyOnce.AzureFunctions
             }
         }
 
-        public Task Delete(string itemId)
+        public Task Delete(string itemId, CancellationToken cancellationToken = default)
         {
-            return container.DeleteItemAsync<OutboxItem>(itemId, PartitionKey.None);
+            return container.DeleteItemAsync<OutboxItem>(itemId, PartitionKey.None, cancellationToken: cancellationToken);
         }
     }
 }

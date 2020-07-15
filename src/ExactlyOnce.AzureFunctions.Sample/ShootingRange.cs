@@ -32,8 +32,8 @@ namespace ExactlyOnce.AzureFunctions.Sample
                     attemptMade.IsHit = false;
                 }
 
-                return (attemptMade, new BlobInfo {BlobName = "This also a side effect"});
-            });
+                    return (attemptMade, new BlobInfo{ BlobName = "This also a side effect" });
+                });
 
             return message;
         }
